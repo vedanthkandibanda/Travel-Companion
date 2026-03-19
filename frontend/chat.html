@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chat</title>
+</head>
+<body>
+
+<h2>💬 Chat</h2>
+
+<div id="chatBox" style="border:1px solid #ccc; height:300px; overflow:auto; padding:10px;"></div>
+
+<br>
+
+<input id="msg" placeholder="Type message">
+<button onclick="sendMessage()">Send</button>
+
+<script>
+
+const senderId = localStorage.getItem("userId")
+const receiverId = localStorage.getItem("chatUserId")
+
+// Load messages
+async function loadMessages(){
+
+  const res = await fetch(`http://localhost:5000/api/flights/messages/${senderId}/${receiverId}`)
+  const data = await res.json()
+
+  const chatBox = document.getElementById("chatBox")
+  chatBox.innerHTML = ""
+
+  data.forEach(msg => {
+
+    const div = document.createElement("div")
+
+    div.innerHTML = `
+      <p><b>${msg.sender_id == senderId ? "You" : "Them"}:</b> ${msg.message}</p>
+    `
+
+    chatBox.appendChild(div)
+  })
+
+  chatBox.scrollTop = chatBox.scrollHeight
+}
+
+// Send message
+async function sendMessage(){
+
+  const message = document.getElementById("msg").value
+
+  if (!message) return
+
+  await fetch("http://localhost:5000/api/flights/message", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      senderId,
+      receiverId,
+      message
+    })
+  })
+
+  document.getElementById("msg").value = ""
+
+  loadMessages()
+}
+
+// Auto refresh every 3 seconds
+setInterval(loadMessages, 3000)
+
+// Initial load
+loadMessages()
+
+</script>
+
+</body>
+</html>

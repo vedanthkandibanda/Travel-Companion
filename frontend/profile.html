@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Create Profile</title>
+</head>
+
+<body>
+
+<h2>Create Your Travel Profile</h2>
+
+<form id="profileForm">
+
+<input type="number" id="user_id" placeholder="User ID" required><br><br>
+
+<input type="text" id="languages" placeholder="Languages (comma separated)"><br><br>
+
+<input type="text" id="interests" placeholder="Interests"><br><br>
+
+<input type="text" id="hobbies" placeholder="Hobbies"><br><br>
+
+<input type="text" id="travel_purpose" placeholder="Travel Purpose"><br><br>
+
+<input type="text" id="university" placeholder="University (optional)"><br><br>
+
+<button type="submit">Save Profile</button>
+
+</form>
+
+<script>
+
+document.getElementById("profileForm").addEventListener("submit", async function(e){
+
+e.preventDefault()
+
+const data = {
+user_id: document.getElementById("user_id").value,
+languages: document.getElementById("languages").value,
+interests: document.getElementById("interests").value,
+hobbies: document.getElementById("hobbies").value,
+travel_purpose: document.getElementById("travel_purpose").value,
+university: document.getElementById("university").value
+}
+
+const res = await fetch("http://localhost:5000/api/profile/add",{
+method:"POST",
+headers:{ "Content-Type":"application/json" },
+body:JSON.stringify(data)
+})
+
+const result = await res.json()
+alert(result.message)
+
+})
+
+</script>
+
+</body>
+</html>

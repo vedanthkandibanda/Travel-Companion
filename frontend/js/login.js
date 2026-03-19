@@ -1,28 +1,28 @@
 const form = document.getElementById("loginForm");
 
 form.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-e.preventDefault();
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
 
-const email = document.getElementById("email").value;
-const password = document.getElementById("password").value;
+  const response = await fetch("http://localhost:5000/api/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ email, password })
+  });
 
-const response = await fetch("http://localhost:5000/api/auth/login",{
+  const data = await response.json();
 
-method:"POST",
+  if (data.userId) {
+    localStorage.setItem("userId", data.userId);
 
-headers:{
-"Content-Type":"application/json"
-},
+    alert("Login successful 🚀");
 
-body:JSON.stringify({email,password})
-
-});
-
-const data = await response.json();
-
-localStorage.setItem("token",data.token);
-
-window.location.href="dashboard.html";
-
+    window.location.href = "dashboard.html";
+  } else {
+    alert(data.message);
+  }
 });

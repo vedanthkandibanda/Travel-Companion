@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Add Flight</title>
+</head>
+
+<body>
+
+<h2>Add Your Flight</h2>
+
+<form id="flightForm">
+
+<input type="number" id="user_id" placeholder="User ID" required><br><br>
+
+<input type="text" id="flight_number" placeholder="Flight Number" required><br><br>
+
+<input type="text" id="departure_city" placeholder="Departure City" required><br><br>
+
+<input type="text" id="arrival_city" placeholder="Arrival City" required><br><br>
+
+<input type="date" id="departure_date" required><br><br>
+
+<input type="time" id="departure_time" required><br><br>
+
+<input type="text" id="seat_number" placeholder="Seat Number" required><br><br>
+
+<button type="submit">Add Flight</button>
+
+</form>
+
+<script>
+
+document.getElementById("flightForm").addEventListener("submit", async function(e){
+
+e.preventDefault()
+
+const data = {
+user_id: document.getElementById("user_id").value,
+flight_number: document.getElementById("flight_number").value,
+departure_city: document.getElementById("departure_city").value,
+arrival_city: document.getElementById("arrival_city").value,
+departure_date: document.getElementById("departure_date").value,
+departure_time: document.getElementById("departure_time").value,
+seat_number: document.getElementById("seat_number").value
+}
+
+const response = await fetch("http://localhost:5000/api/flights/add",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify(data)
+})
+
+const result = await response.json()
+
+alert(result.message)
+
+})
+
+</script>
+
+</body>
+</html>

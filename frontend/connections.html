@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Connections</title>
+</head>
+<body>
+
+<h2>📩 Connection Requests</h2>
+<div id="requests"></div>
+
+<h2>🤝 Accepted Connections</h2>
+<div id="acceptedList"></div>
+
+
+<script>
+
+async function loadConnections(){
+
+  const userId = localStorage.getItem("userId")
+
+  const res = await fetch(`http://localhost:5000/api/flights/requests/${userId}`)
+  const data = await res.json()
+
+  const requestDiv = document.getElementById("requests")
+  const acceptedDiv = document.getElementById("accepted")
+
+  requestDiv.innerHTML = ""
+  acceptedDiv.innerHTML = ""
+
+  data.forEach(conn => {
+
+    const card = document.createElement("div")
+
+    if (conn.status === "pending") {
+
+      card.innerHTML = `
+        <p>👤 ${conn.name}</p>
+        <button onclick="acceptRequest(${conn.id})">Accept</button>
+      `
+
+      requestDiv.appendChild(card)
+
+    } else {
+
+      card.innerHTML = `
+        <p>🤝 ${conn.name} (Connected)</p>
+      `
+
+      acceptedDiv.appendChild(card)
+    }
+  })
+}
+
+async function acceptRequest(id){
+
+  await fetch("http://localhost:5000/api/flights/accept", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ connectionId: id })
+  })
+
+  alert("Accepted ✅")
+  loadConnections()
+}
+
+
+function openChat(id){
+  localStorage.setItem("chatUserId", id)
+  window.location.href = "chat.html"
+}
+
+async function loadAccepted(){
+
+  const userId = localStorage.getItem("userId")
+
+  const res = await fetch(`http://localhost:5000/api/flights/connections/${userId}`)
+  const data = await res.json()
+
+  const div = document.getElementById("acceptedList")
+  div.innerHTML = ""
+
+  if(data.length === 0){
+    div.innerHTML = "No connections yet 🤝"
+    return
+  }
+
+  data.forEach(user => {
+    const card = document.createElement("div")
+
+    card.innerHTML = `
+      <div style="border:1px solid #ccc; padding:10px; margin:10px;">
+        <h3>${user.name}</h3>
+        <p>Languages: ${user.languages || "N/A"}</p>
+        <p>Interests: ${user.interests || "N/A"}</p>
+        <button onclick="openChat(${user.id})">Message</button>
+      </div>
+    `
+
+    div.appendChild(card)
+  })
+}
+
+loadConnections()
+loadAccepted()
+
+setInterval(loadConnections, 5000)
+setInterval(loadAccepted, 5000)
+
+</script>
+
+</body>
+</html>

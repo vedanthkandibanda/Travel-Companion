@@ -19,3 +19,16 @@ function logout() {
 localStorage.removeItem("token");
 window.location.href = "login.html";
 }
+
+async function loadNotifications(){
+
+  const userId = localStorage.getItem("userId")
+
+  const res = await fetch(`http://localhost:5000/api/flights/unread/${userId}`)
+  const data = await res.json()
+
+  document.getElementById("notifCount").innerText = data.count
+}
+
+setInterval(loadNotifications, 5000)
+loadNotifications()

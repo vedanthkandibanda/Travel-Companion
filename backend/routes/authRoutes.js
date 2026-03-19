@@ -40,7 +40,6 @@ router.post("/register", async (req, res) => {
 
 // LOGIN USER
 router.post("/login", (req, res) => {
-
   const { email, password } = req.body;
 
   const sql = "SELECT * FROM users WHERE email = ?";
@@ -69,11 +68,9 @@ router.post("/login", (req, res) => {
 
     res.json({
       message: "Login successful",
-      token: token
+      userId: user.id
     });
-
   });
-
 });
 
 router.get("/profile", authMiddleware, (req, res) => {

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Find Travelers</title>
+</head>
+
+<body>
+
+<h2>Find Travelers On Your Flight</h2>
+
+<input type="text" id="flightNumber" placeholder="Enter Flight Number">
+
+<select id="filter">
+  <option value="all">All Travelers</option>
+  <option value="high">🔥 High Match (60%+)</option>
+  <option value="medium">⭐ Medium (30%+)</option>
+</select>
+
+<button onclick="findTravelers()">Search</button>
+
+<div id="results"></div>
+
+<script>
+async function findTravelers(){
+
+  const flight = document.getElementById("flightNumber").value
+  const userId = localStorage.getItem("userId")
+
+  if (!userId) {
+    alert("Please login first")
+    window.location.href = "login.html"
+    return
+  }
+
+  try {
+    const res = await fetch(`http://localhost:5000/api/flights/matches/${flight}/${userId}`)
+    const data = await res.json()
+
+    const filter = document.getElementById("filter").value
+
+let filteredData = data
+
+if (filter === "high") {
+  filteredData = data.filter(u => u.score >= 60)
+}
+
+if (filter === "medium") {
+  filteredData = data.filter(u => u.score >= 30)
+}
+
+    console.log(data) // 👈 IMPORTANT DEBUG
+
+    const container = document.getElementById("results")
+    container.innerHTML = ""
+
+    if (data.length === 0) {
+      container.innerHTML = "No travelers found 😕"
+      return
+    }
+
+    filteredData.forEach(user => {
+
+      const matchPercent = Math.min(user.score, 100)
+
+      const card = document.createElement("div")
+
+      card.innerHTML = `
+  <div style="
+    border:1px solid #ddd;
+    padding:15px;
+    margin:10px;
+    border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  ">
+    <h3>🔥 ${user.name}</h3>
+
+    <p>⭐ Match: <b>${matchPercent}%</b></p>
+
+    <p><b>Why you match:</b></p>
+    ${user.reasons.map(r => `<div>✔ ${r}</div>`).join("")}
+
+    <p>📍 ${user.departure_city} → ${user.arrival_city}</p>
+    <p>💺 Seat: ${user.seat_number}</p>
+
+    <button onclick="connectUser(${user.id})"
+      style="background:#007bff;color:white;padding:8px;border:none;border-radius:5px;">
+      Connect
+    </button>
+  </div>
+`
+
+      container.appendChild(card)
+    })
+
+  } catch (err) {
+    console.error(err)
+    alert("Error fetching data")
+  }
+}
+
+async function connectUser(receiverId){
+
+  const senderId = localStorage.getItem("userId")
+
+  try {
+    const res = await fetch("http://localhost:5000/api/flights/connect", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        senderId,
+        receiverId
+      })
+    })
+
+    const data = await res.json()
+
+    alert(data.message)
+
+  } catch (err) {
+    console.error(err)
+    alert("Error sending request")
+  }
+}
+
+// Get received requests
+router.get("/requests/:userId", (req, res) => {
+
+  const userId = req.params.userId
+
+  const sql = `
+    SELECT connections.*, users.name
+    FROM connections
+    JOIN users ON connections.sender_id = users.id
+    WHERE receiver_id = ?
+  `
+
+  db.query(sql, [userId], (err, results) => {
+    if (err) return res.status(500).json(err)
+
+    res.json(results)
+  })
+})
+
+router.post("/accept", (req, res) => {
+
+  const { connectionId } = req.body
+
+  const sql = `
+    UPDATE connections 
+    SET status = 'accepted'
+    WHERE id = ?
+  `
+
+  db.query(sql, [connectionId], (err) => {
+    if (err) return res.status(500).json(err)
+
+    res.json({ message: "Connection accepted ✅" })
+  })
+})
+</script>
+
+</body>
+</html>
