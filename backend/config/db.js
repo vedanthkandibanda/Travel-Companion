@@ -11,7 +11,7 @@ const db = mysql.createConnection({
   }
 });
 
-console.log({
+console.log("ENV CHECK:", {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   database: process.env.DB_NAME,
