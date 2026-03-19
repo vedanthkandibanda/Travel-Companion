@@ -66,13 +66,12 @@ WHERE flights.flight_number = ?
     // ✅ Find current user
     const currentUser = results.find(u => u.id == user_id);
 
-    if (!currentUser) {
-      console.log("User not found in this flight");
-      return res.json([]); // 🔥 don't crash frontend
-    }
-
     // ✅ Remove current user
-    const filtered = results.filter(u => u.id != user_id);
+    let filtered = results;
+
+if (currentUser) {
+  filtered = results.filter(u => u.id != user_id);
+}
 
     const scored = filtered.map(user => {
 
