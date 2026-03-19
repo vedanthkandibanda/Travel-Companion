@@ -30,44 +30,55 @@ router.post("/add", (req, res) => {
   );
 });
 
-// Find matching travelers
 router.get("/matches/:flight_number/:user_id", (req, res) => {
 
   const { flight_number, user_id } = req.params;
 
+  console.log("Flight:", flight_number);
+  console.log("User:", user_id);
+
   const sql = `
-SELECT 
-users.id,
-users.name,
-users.email,
-flights.flight_number,
-flights.departure_city,
-flights.arrival_city,
-flights.departure_date,
-flights.departure_time,
-flights.seat_number,
-profiles.languages,
-profiles.interests,
-profiles.hobbies,
-profiles.travel_purpose,
-profiles.university
-
-FROM flights
-
-JOIN users ON flights.user_id = users.id
-LEFT JOIN profiles ON profiles.user_id = users.id
-
-WHERE flights.flight_number = ?
-`;
+    SELECT 
+      users.id,
+      users.name,
+      users.email,
+      flights.flight_number,
+      flights.departure_city,
+      flights.arrival_city,
+      flights.departure_date,
+      flights.departure_time,
+      flights.seat_number,
+      profiles.languages,
+      profiles.interests,
+      profiles.hobbies,
+      profiles.travel_purpose,
+      profiles.university
+    FROM flights
+    JOIN users ON flights.user_id = users.id
+    LEFT JOIN profiles ON profiles.user_id = users.id
+    WHERE flights.flight_number = ?
+  `;
 
   db.query(sql, [flight_number], (err, results) => {
-    if (err) return res.status(500).json(err);
 
-    // ✅ Find current user correctly
+    if (err) {
+      console.log("DB ERROR:", err);
+      return res.status(500).json({ error: err.message });
+    }
+
+    console.log("RESULTS:", results);
+
+    // ✅ SAFETY: ensure array
+    if (!Array.isArray(results)) {
+      return res.json([]);
+    }
+
+    // ✅ Find current user
     const currentUser = results.find(u => u.id == user_id);
 
     if (!currentUser) {
-      return res.status(404).json({ message: "Current user not found in this flight" });
+      console.log("User not found in this flight");
+      return res.json([]); // 🔥 don't crash frontend
     }
 
     // ✅ Remove current user
@@ -75,56 +86,50 @@ WHERE flights.flight_number = ?
 
     const scored = filtered.map(user => {
 
-  let score = 0
-let reasons = []
+      let score = 0;
+      let reasons = [];
 
-// Language match (strong signal)
-const userLangs = user.languages?.toLowerCase().split(",") || []
-const currentLangs = currentUser.languages?.toLowerCase().split(",") || []
+      const userLangs = user.languages?.toLowerCase().split(",") || [];
+      const currentLangs = currentUser.languages?.toLowerCase().split(",") || [];
 
-if (userLangs.some(l => currentLangs.includes(l.trim()))) {
-  score += 25
-  reasons.push("Speaks same language")
-}
+      if (userLangs.some(l => currentLangs.includes(l.trim()))) {
+        score += 25;
+        reasons.push("Speaks same language");
+      }
 
-// Interest match (strongest signal)
-const userInterests = user.interests?.toLowerCase().split(",") || []
-const currentInterests = currentUser.interests?.toLowerCase().split(",") || []
+      const userInterests = user.interests?.toLowerCase().split(",") || [];
+      const currentInterests = currentUser.interests?.toLowerCase().split(",") || [];
 
-if (userInterests.some(i => currentInterests.includes(i.trim()))) {
-  score += 35
-  reasons.push("Shared interests")
-}
+      if (userInterests.some(i => currentInterests.includes(i.trim()))) {
+        score += 35;
+        reasons.push("Shared interests");
+      }
 
-// Hobby match (medium signal)
-const userHobbies = user.hobbies?.toLowerCase().split(",") || []
-const currentHobbies = currentUser.hobbies?.toLowerCase().split(",") || []
+      const userHobbies = user.hobbies?.toLowerCase().split(",") || [];
+      const currentHobbies = currentUser.hobbies?.toLowerCase().split(",") || [];
 
-if (userHobbies.some(h => currentHobbies.includes(h.trim()))) {
-  score += 15
-  reasons.push("Similar hobbies")
-}
+      if (userHobbies.some(h => currentHobbies.includes(h.trim()))) {
+        score += 15;
+        reasons.push("Similar hobbies");
+      }
 
-// Travel purpose (context match)
-if (user.travel_purpose === currentUser.travel_purpose) {
-  score += 15
-  reasons.push("Same travel purpose")
-}
+      if (user.travel_purpose === currentUser.travel_purpose) {
+        score += 15;
+        reasons.push("Same travel purpose");
+      }
 
-// University (weak signal but useful)
-if (
-  user.university &&
-  currentUser.university &&
-  user.university.toLowerCase() === currentUser.university.toLowerCase()
-) {
-  score += 10
-  reasons.push("Same university")
-}
+      if (
+        user.university &&
+        currentUser.university &&
+        user.university.toLowerCase() === currentUser.university.toLowerCase()
+      ) {
+        score += 10;
+        reasons.push("Same university");
+      }
 
-  return { ...user, score, reasons }
-})
+      return { ...user, score, reasons };
+    });
 
-    // ✅ Sort by best match
     scored.sort((a, b) => b.score - a.score);
 
     res.json(scored);
