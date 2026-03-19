@@ -38,16 +38,22 @@ router.get("/matches/:flight_number/:user_id", (req, res) => {
   console.log("User:", user_id);
 
   const sql = `
-SELECT 
-  users.id,
-  users.name,
-  flights.flight_number,
-  flights.departure_city,
-  flights.arrival_city
-FROM flights
-JOIN users ON flights.user_id = users.id
-WHERE flights.flight_number = ?
-`;
+  SELECT 
+    users.id,
+    users.name,
+    flights.flight_number,
+    flights.departure_city,
+    flights.arrival_city,
+    profiles.languages,
+    profiles.interests,
+    profiles.hobbies,
+    profiles.travel_purpose,
+    profiles.university
+  FROM flights
+  JOIN users ON flights.user_id = users.id
+  LEFT JOIN profiles ON profiles.user_id = users.id
+  WHERE flights.flight_number = ?
+  `;
 
   db.query(sql, [flight_number], (err, results) => {
 
@@ -58,28 +64,28 @@ WHERE flights.flight_number = ?
 
     console.log("RESULTS:", results);
 
-    // ✅ SAFETY: ensure array
     if (!Array.isArray(results)) {
       return res.json([]);
     }
 
-    // ✅ Find current user
+    // ✅ find current user
     const currentUser = results.find(u => u.id == user_id);
 
-    // ✅ Remove current user
+    // ✅ filter users
     let filtered = results;
 
-if (currentUser) {
-  filtered = results.filter(u => u.id != user_id);
-}
+    if (currentUser) {
+      filtered = results.filter(u => u.id != user_id);
+    }
 
+    // ✅ scoring (SAFE)
     const scored = filtered.map(user => {
 
       let score = 0;
       let reasons = [];
 
       const userLangs = user.languages?.toLowerCase().split(",") || [];
-      const currentLangs = currentUser.languages?.toLowerCase().split(",") || [];
+      const currentLangs = currentUser?.languages?.toLowerCase().split(",") || [];
 
       if (userLangs.some(l => currentLangs.includes(l.trim()))) {
         score += 25;
@@ -87,7 +93,7 @@ if (currentUser) {
       }
 
       const userInterests = user.interests?.toLowerCase().split(",") || [];
-      const currentInterests = currentUser.interests?.toLowerCase().split(",") || [];
+      const currentInterests = currentUser?.interests?.toLowerCase().split(",") || [];
 
       if (userInterests.some(i => currentInterests.includes(i.trim()))) {
         score += 35;
@@ -95,19 +101,20 @@ if (currentUser) {
       }
 
       const userHobbies = user.hobbies?.toLowerCase().split(",") || [];
-      const currentHobbies = currentUser.hobbies?.toLowerCase().split(",") || [];
+      const currentHobbies = currentUser?.hobbies?.toLowerCase().split(",") || [];
 
       if (userHobbies.some(h => currentHobbies.includes(h.trim()))) {
         score += 15;
         reasons.push("Similar hobbies");
       }
 
-      if (user.travel_purpose === currentUser.travel_purpose) {
+      if (currentUser && user.travel_purpose === currentUser.travel_purpose) {
         score += 15;
         reasons.push("Same travel purpose");
       }
 
       if (
+        currentUser &&
         user.university &&
         currentUser.university &&
         user.university.toLowerCase() === currentUser.university.toLowerCase()
@@ -119,6 +126,7 @@ if (currentUser) {
       return { ...user, score, reasons };
     });
 
+    // ✅ sort
     scored.sort((a, b) => b.score - a.score);
 
     res.json(scored);
