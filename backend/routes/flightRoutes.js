@@ -38,26 +38,16 @@ router.get("/matches/:flight_number/:user_id", (req, res) => {
   console.log("User:", user_id);
 
   const sql = `
-    SELECT 
-      users.id,
-      users.name,
-      users.email,
-      flights.flight_number,
-      flights.departure_city,
-      flights.arrival_city,
-      flights.departure_date,
-      flights.departure_time,
-      flights.seat_number,
-      profiles.languages,
-      profiles.interests,
-      profiles.hobbies,
-      profiles.travel_purpose,
-      profiles.university
-    FROM flights
-    JOIN users ON flights.user_id = users.id
-    LEFT JOIN profiles ON profiles.user_id = users.id
-    WHERE flights.flight_number = ?
-  `;
+SELECT 
+  users.id,
+  users.name,
+  flights.flight_number,
+  flights.departure_city,
+  flights.arrival_city
+FROM flights
+JOIN users ON flights.user_id = users.id
+WHERE flights.flight_number = ?
+`;
 
   db.query(sql, [flight_number], (err, results) => {
 
