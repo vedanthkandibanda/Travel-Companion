@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -10,32 +9,31 @@ const flightRoutes = require("./routes/flightRoutes");
 const authRoutes = require("./routes/authRoutes");
 
 const app = express();
-
-// 🔥 Create HTTP server
 const server = http.createServer(app);
 
-// 🔥 Socket.io
-const io = new Server(server, {
-  cors: { origin: "*" }
-});
+// ✅ CORS (clean)
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type"]
 }));
+
 app.use(express.json());
 
-// ROUTES
+// ✅ ROUTES
 app.use("/api/auth", authRoutes);
 app.use("/api/flights", flightRoutes);
 app.use("/api/profile", profileRoutes);
 
-// TEST ROUTE
+// ✅ TEST
 app.get("/", (req, res) => {
-  res.send("Travel Companion Backend Running 🚀");
+  res.send("Backend running 🚀");
 });
 
-// SOCKET
+// ✅ SOCKET (optional)
+const io = new Server(server, {
+  cors: { origin: "*" }
+});
+
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
@@ -49,7 +47,4 @@ io.on("connection", (socket) => {
 });
 
 const PORT = process.env.PORT || 5000;
-
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+server.listen(PORT, () => console.log(`Server running on ${PORT}`));
