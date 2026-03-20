@@ -11,9 +11,8 @@ const authRoutes = require("./routes/authRoutes");
 const app = express();
 const server = http.createServer(app);
 
-const flightRooms = {};
+const flightRooms = {}; // 🔥 keep
 
-// ✅ CORS (clean)
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE"],
@@ -21,17 +20,17 @@ app.use(cors({
 
 app.use(express.json());
 
-// ✅ ROUTES
+// ROUTES
 app.use("/api/auth", authRoutes);
 app.use("/api/flights", flightRoutes);
 app.use("/api/profile", profileRoutes);
 
-// ✅ TEST
+// TEST
 app.get("/", (req, res) => {
   res.send("Backend running 🚀");
 });
 
-// ✅ SOCKET (optional)
+// SOCKET
 const io = new Server(server, {
   cors: { origin: "*" }
 });
@@ -40,78 +39,92 @@ io.on("connection", (socket) => {
 
   console.log("User connected:", socket.id);
 
-  // ✅ join room (userId)
+  // =========================
+  // 👤 PRIVATE CHAT (FIXED)
+  // =========================
   socket.on("join", (userId) => {
-    socket.join(userId);
+    socket.join(`user_${userId}`); // ✅ FIX
+    socket.userId = userId; // store for cleanup
   });
 
-// join flight
-  socket.on("joinFlight", (flightNumber) => {
-
-  if (!flightRooms[flightNumber]) {
-    flightRooms[flightNumber] = new Set();
-  }
-
-  // ⚠️ remove userId dependency (or optional)
-  flightRooms[flightNumber].add(socket.id);
-
-  socket.join(`flight_${flightNumber}`);
-
-  io.to(`flight_${flightNumber}`).emit("flightCount", {
-    flightNumber,
-    count: flightRooms[flightNumber].size
-  });
-
-});
-
-socket.on("sendGroupMessage", (data) => {
-  const { flightNumber, senderId, message } = data;
-
-  io.to(`flight_${flightNumber}`).emit("receiveGroupMessage", {
-    senderId,
-    message
-  });
-});
-
-// 👥 CHECK GROUP SIZE
-socket.on("getFlightCount", (flightNumber) => {
-
-  const count = flightRooms[flightNumber]
-    ? flightRooms[flightNumber].size
-    : 0;
-
-  socket.emit("flightCount", {
-    flightNumber,
-    count
-  });
-
-});
-
-// 📢 SEND GROUP MESSAGE
-socket.on("sendFlightMessage", ({ senderId, flightNumber, message }) => {
-
-  io.to(`flight_${flightNumber}`).emit("receiveFlightMessage", {
-    senderId,
-    message
-  });
-
-});
-
-  // ✅ send message instantly
   socket.on("sendMessage", (data) => {
 
     const { senderId, receiverId, message } = data;
 
-    // send to receiver room
-    io.to(receiverId).emit("receiveMessage", {
+    io.to(`user_${receiverId}`).emit("receiveMessage", { // ✅ FIX
       senderId,
       message
     });
 
   });
 
+  // =========================
+  // ✈️ JOIN FLIGHT GROUP
+  // =========================
+  socket.on("joinFlight", (flightNumber) => {
+
+    if (!flightRooms[flightNumber]) {
+      flightRooms[flightNumber] = new Set();
+    }
+
+    flightRooms[flightNumber].add(socket.id);
+
+    socket.join(`flight_${flightNumber}`);
+    socket.flightNumber = flightNumber; // store for cleanup
+
+    io.to(`flight_${flightNumber}`).emit("flightCount", {
+      flightNumber,
+      count: flightRooms[flightNumber].size
+    });
+
+  });
+
+  // =========================
+  // 👥 GET GROUP COUNT
+  // =========================
+  socket.on("getFlightCount", (flightNumber) => {
+
+    const count = flightRooms[flightNumber]
+      ? flightRooms[flightNumber].size
+      : 0;
+
+    socket.emit("flightCount", {
+      flightNumber,
+      count
+    });
+
+  });
+
+  // =========================
+  // 📢 GROUP MESSAGE (KEEP ONLY THIS)
+  // =========================
+  socket.on("sendFlightMessage", ({ senderId, flightNumber, message }) => {
+
+    io.to(`flight_${flightNumber}`).emit("receiveFlightMessage", {
+      senderId,
+      message
+    });
+
+  });
+
+  // =========================
+  // ❗ CLEANUP ON DISCONNECT
+  // =========================
   socket.on("disconnect", () => {
+
     console.log("User disconnected");
+
+    const flight = socket.flightNumber;
+
+    if (flight && flightRooms[flight]) {
+      flightRooms[flight].delete(socket.id);
+
+      io.to(`flight_${flight}`).emit("flightCount", {
+        flightNumber: flight,
+        count: flightRooms[flight].size
+      });
+    }
+
   });
 
 });

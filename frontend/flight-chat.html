@@ -1,14 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Flight Group Chat</title>
+  <title>Flight Group Chat</title>
 </head>
 
 <body>
 
-<h2>✈ Flight Group Chat</h2>
+<h2 id="title">✈️ Flight Chat</h2>
 
-<div id="chatBox" style="border:1px solid #ccc;height:300px;overflow:auto;padding:10px;"></div>
+<div id="chatBox" style="
+  border:1px solid #ccc;
+  height:300px;
+  overflow:auto;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+"></div>
 
 <br>
 
@@ -21,41 +28,74 @@
 
 const socket = io("https://travel-companion-y8fn.onrender.com");
 
-const msgInput = document.getElementById("msg");
-const chatBox = document.getElementById("chatBox");
-
-const userId = Number(localStorage.getItem("userId"));
+const myId = Number(localStorage.getItem("userId"));
 const flightNumber = localStorage.getItem("flightNumber");
 
-// 🚀 join flight group
-socket.emit("joinFlight", flightNumber);
+const chatBox = document.getElementById("chatBox");
+const msgInput = document.getElementById("msg");
+
+// 🚫 safety
+if (!flightNumber || !myId) {
+  alert("Invalid access");
+  window.location.href = "find-travelers.html";
+}
+
+// ==============================
+// ✈️ JOIN FLIGHT ROOM
+// ==============================
+socket.emit("joinFlight", {
+  flightNumber,
+  userId: myId
+});
+
+document.getElementById("title").innerText =
+  `✈️ Flight ${flightNumber} Chat`;
 
 
-// ✅ RECEIVE GROUP MESSAGE
-socket.on("receiveGroupMessage", (data) => {
+// ==============================
+// 🧱 RENDER MESSAGE
+// ==============================
+function renderMessage(senderId, message){
 
   const div = document.createElement("div");
 
-  div.style.background = "#eee";
+  const isMe = senderId === myId;
+
+  div.style.background = isMe ? "#d1e7ff" : "#eee";
   div.style.margin = "5px";
   div.style.padding = "8px";
+  div.style.borderRadius = "6px";
+  div.style.alignSelf = isMe ? "flex-end" : "flex-start";
 
-  div.innerHTML = `<b>User ${data.senderId}:</b> ${data.message}`;
+  div.innerHTML = `<b>${isMe ? "You" : "User " + senderId}:</b> ${message}`;
 
   chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
 
+
+// ==============================
+// 📥 RECEIVE MESSAGE
+// ==============================
+socket.on("receiveFlightMessage", (data) => {
+  renderMessage(data.senderId, data.message);
 });
 
 
-// ✅ SEND MESSAGE
+// ==============================
+// 📤 SEND MESSAGE
+// ==============================
 function sendMessage(){
 
   const message = msgInput.value.trim();
   if (!message) return;
 
-  socket.emit("sendGroupMessage", {
+  // instant UI
+  renderMessage(myId, message);
+
+  socket.emit("sendFlightMessage", {
+    senderId: myId,
     flightNumber,
-    senderId: userId,
     message
   });
 
@@ -63,6 +103,15 @@ function sendMessage(){
 }
 
 document.getElementById("sendBtn").onclick = sendMessage;
+
+
+// ==============================
+// 👥 LIVE COUNT
+// ==============================
+socket.on("flightCount", (data) => {
+  document.getElementById("title").innerText =
+    `✈️ Flight ${data.flightNumber} • 👥 ${data.count} online`;
+});
 
 </script>
 
