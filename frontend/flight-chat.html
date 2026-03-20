@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Flight Group Chat</title>
+</head>
+
+<body>
+
+<h2>✈ Flight Group Chat</h2>
+
+<div id="chatBox" style="border:1px solid #ccc;height:300px;overflow:auto;padding:10px;"></div>
+
+<br>
+
+<input id="msg" placeholder="Type message">
+<button id="sendBtn">Send</button>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<script>
+
+const socket = io("https://travel-companion-y8fn.onrender.com");
+
+const msgInput = document.getElementById("msg");
+const chatBox = document.getElementById("chatBox");
+
+const userId = Number(localStorage.getItem("userId"));
+const flightNumber = localStorage.getItem("flightNumber");
+
+// 🚀 join flight group
+socket.emit("joinFlight", flightNumber);
+
+
+// ✅ RECEIVE GROUP MESSAGE
+socket.on("receiveGroupMessage", (data) => {
+
+  const div = document.createElement("div");
+
+  div.style.background = "#eee";
+  div.style.margin = "5px";
+  div.style.padding = "8px";
+
+  div.innerHTML = `<b>User ${data.senderId}:</b> ${data.message}`;
+
+  chatBox.appendChild(div);
+
+});
+
+
+// ✅ SEND MESSAGE
+function sendMessage(){
+
+  const message = msgInput.value.trim();
+  if (!message) return;
+
+  socket.emit("sendGroupMessage", {
+    flightNumber,
+    senderId: userId,
+    message
+  });
+
+  msgInput.value = "";
+}
+
+document.getElementById("sendBtn").onclick = sendMessage;
+
+</script>
+
+</body>
+</html>

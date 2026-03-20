@@ -18,10 +18,36 @@
 
 <button id="searchBtn">Search</button>
 
+<button onclick="checkGroup('${flight}')">
+  View Flight Group
+</button>
+
 <div id="results"></div>
 
 <script type="module">
 import BASE_URL from "./js/config.js";
+
+const socket = io("https://travel-companion-y8fn.onrender.com");
+
+function checkGroup(flight){
+
+  socket.emit("getFlightCount", flight);
+
+  socket.on("flightCount", (data) => {
+
+    if(data.flightNumber !== flight) return;
+
+    const join = confirm(
+      `✈️ Flight ${flight}\n👥 ${data.count} people already joined\n\nDo you want to join group chat?`
+    );
+
+    if (join) {
+      localStorage.setItem("flightNumber", flight);
+      window.location.href = "flight-chat.html";
+    }
+
+  });
+}
 
 document.getElementById("searchBtn").addEventListener("click", findTravelers);
 

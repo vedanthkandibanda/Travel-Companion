@@ -11,6 +11,8 @@ const authRoutes = require("./routes/authRoutes");
 const app = express();
 const server = http.createServer(app);
 
+const flightRooms = {};
+
 // ✅ CORS (clean)
 app.use(cors({
   origin: "*",
@@ -42,6 +44,58 @@ io.on("connection", (socket) => {
   socket.on("join", (userId) => {
     socket.join(userId);
   });
+
+// join flight
+  socket.on("joinFlight", (flightNumber) => {
+
+  if (!flightRooms[flightNumber]) {
+    flightRooms[flightNumber] = new Set();
+  }
+
+  // ⚠️ remove userId dependency (or optional)
+  flightRooms[flightNumber].add(socket.id);
+
+  socket.join(`flight_${flightNumber}`);
+
+  io.to(`flight_${flightNumber}`).emit("flightCount", {
+    flightNumber,
+    count: flightRooms[flightNumber].size
+  });
+
+});
+
+socket.on("sendGroupMessage", (data) => {
+  const { flightNumber, senderId, message } = data;
+
+  io.to(`flight_${flightNumber}`).emit("receiveGroupMessage", {
+    senderId,
+    message
+  });
+});
+
+// 👥 CHECK GROUP SIZE
+socket.on("getFlightCount", (flightNumber) => {
+
+  const count = flightRooms[flightNumber]
+    ? flightRooms[flightNumber].size
+    : 0;
+
+  socket.emit("flightCount", {
+    flightNumber,
+    count
+  });
+
+});
+
+// 📢 SEND GROUP MESSAGE
+socket.on("sendFlightMessage", ({ senderId, flightNumber, message }) => {
+
+  io.to(`flight_${flightNumber}`).emit("receiveFlightMessage", {
+    senderId,
+    message
+  });
+
+});
 
   // ✅ send message instantly
   socket.on("sendMessage", (data) => {
