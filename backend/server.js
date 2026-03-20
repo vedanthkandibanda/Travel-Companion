@@ -35,15 +35,31 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
+
   console.log("User connected:", socket.id);
 
+  // ✅ join room (userId)
+  socket.on("join", (userId) => {
+    socket.join(userId);
+  });
+
+  // ✅ send message instantly
   socket.on("sendMessage", (data) => {
-    io.emit("receiveMessage", data);
+
+    const { senderId, receiverId, message } = data;
+
+    // send to receiver room
+    io.to(receiverId).emit("receiveMessage", {
+      senderId,
+      message
+    });
+
   });
 
   socket.on("disconnect", () => {
     console.log("User disconnected");
   });
+
 });
 
 const PORT = process.env.PORT || 5000;

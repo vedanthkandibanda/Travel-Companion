@@ -15,16 +15,41 @@
 <input id="msg" placeholder="Type message">
 <button id="sendBtn">Send</button>
 
-<script type="module">
-import BASE_URL from "./js/config.js";
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<script>
+
+const BASE_URL = "https://travel-companion-y8fn.onrender.com/api";
+
+const socket = io("https://travel-companion-y8fn.onrender.com");
+
+const msg = document.getElementById("msg");
 
 const senderId = Number(localStorage.getItem("userId"));
 const receiverId = Number(localStorage.getItem("chatUserId"));
 
-if (!senderId || !receiverId) {
-  alert("Invalid chat session");
-}
+// 🔥 join room
+socket.emit("join", senderId);
 
+
+// ✅ RECEIVE LIVE MESSAGE
+socket.on("receiveMessage", (data) => {
+
+  const chatBox = document.getElementById("chatBox");
+
+  const div = document.createElement("div");
+
+  div.style.background = "#eee";
+  div.style.margin = "5px";
+  div.style.padding = "8px";
+
+  div.innerHTML = `<b>Them:</b> ${data.message}`;
+
+  chatBox.appendChild(div);
+});
+
+
+// ✅ LOAD OLD MESSAGES (your existing API)
 async function loadMessages(){
 
   const res = await fetch(`${BASE_URL}/flights/messages/${senderId}/${receiverId}`);
@@ -33,48 +58,46 @@ async function loadMessages(){
   const chatBox = document.getElementById("chatBox");
   chatBox.innerHTML = "";
 
-  if (!Array.isArray(data) || data.length === 0) {
-    chatBox.innerHTML = "No messages 💬";
-    return;
-  }
-
   data.forEach(msg => {
 
     const div = document.createElement("div");
+
     const isMe = Number(msg.sender_id) === senderId;
 
     div.style.background = isMe ? "#d1e7ff" : "#eee";
     div.style.margin = "5px";
     div.style.padding = "8px";
-    div.style.borderRadius = "8px";
-    div.style.alignSelf = isMe ? "flex-end" : "flex-start";
 
     div.innerHTML = `<b>${isMe ? "You" : "Them"}:</b> ${msg.message}`;
 
     chatBox.appendChild(div);
   });
-
-  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+
+// ✅ SEND MESSAGE
 async function sendMessage(){
 
   const message = msg.value.trim();
   if (!message) return;
 
+  // 1️⃣ Save to DB
   await fetch(`${BASE_URL}/flights/message`, {
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify({ senderId, receiverId, message })
   });
 
+  // 2️⃣ Send instantly via socket
+  socket.emit("sendMessage", { senderId, receiverId, message });
+
   msg.value = "";
-  loadMessages();
 }
 
-document.getElementById("sendBtn").addEventListener("click", sendMessage);
+document.getElementById("sendBtn").onclick = sendMessage;
 
-setInterval(loadMessages, 2000);
+
+// ✅ INIT
 loadMessages();
 
 </script>
