@@ -44,7 +44,7 @@ departure_time: document.getElementById("departure_time").value,
 seat_number: document.getElementById("seat_number").value
 }
 
-const response = await fetch("http://localhost:5000/api/flights/add",{
+const response = await fetch("https://travel-companion-y8fn.onrender.com/api/flights/add",{
 method:"POST",
 headers:{
 "Content-Type":"application/json"

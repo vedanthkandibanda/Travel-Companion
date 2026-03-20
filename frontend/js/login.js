@@ -3,26 +3,36 @@ const form = document.getElementById("loginForm");
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
 
-  const response = await fetch("http://localhost:5000/api/auth/login", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ email, password })
-  });
+  try {
+    const response = await fetch("https://travel-companion-y8fn.onrender.com/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email, password })
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (data.userId) {
-    localStorage.setItem("userId", data.userId);
+    console.log("LOGIN RESPONSE:", data); // 🔥 DEBUG
 
-    alert("Login successful 🚀");
+    // ✅ HANDLE BOTH POSSIBLE FORMATS
+    const userId = data.user?.id || data.userId;
 
-    window.location.href = "dashboard.html";
-  } else {
-    alert(data.message);
+    if (userId) {
+      localStorage.setItem("userId", userId);
+
+      alert("Login successful 🚀");
+      window.location.href = "dashboard.html";
+    } else {
+      alert(data.message || "Login failed");
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Server error during login");
   }
 });

@@ -4,6 +4,7 @@ const db = require("../config/db");
 
 // Add flight
 router.post("/add", (req, res) => {
+
   const {
     user_id,
     flight_number,
@@ -13,6 +14,10 @@ router.post("/add", (req, res) => {
     departure_time,
     seat_number
   } = req.body;
+
+  if (!user_id || !flight_number || !departure_city || !arrival_city) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
 
   const sql = `
     INSERT INTO flights 
@@ -38,20 +43,19 @@ router.get("/matches/:flight_number/:user_id", (req, res) => {
   console.log("User:", user_id);
 
   const sql = `
-    SELECT 
-  users.id,
-  users.name,
-  profiles.languages,
-  profiles.interests,
-  profiles.hobbies,
-  profiles.travel_purpose,
-  profiles.university
-FROM flights
-JOIN users ON flights.user_id = users.id
-LEFT JOIN profiles ON profiles.user_id = users.id
-WHERE flights.flight_number = ?
-GROUP BY users.id
-  `;
+  SELECT DISTINCT
+    users.id,
+    users.name,
+    profiles.languages,
+    profiles.interests,
+    profiles.hobbies,
+    profiles.travel_purpose,
+    profiles.university
+  FROM flights
+  JOIN users ON flights.user_id = users.id
+  LEFT JOIN profiles ON profiles.user_id = users.id
+  WHERE flights.flight_number = ?
+`;
 
   db.query(sql, [flight_number], (err, results) => {
 
@@ -152,7 +156,9 @@ GROUP BY users.id
 router.post("/connect", (req, res) => {
 
   const { senderId, receiverId } = req.body
-
+  if (!senderId || !receiverId) {
+    return res.status(400).json({ message: "Invalid request" });
+  }
   const checkSql = `
     SELECT * FROM connections 
     WHERE sender_id = ? AND receiver_id = ?
@@ -178,27 +184,28 @@ router.post("/connect", (req, res) => {
 })
 
 // ✅ GET CONNECTIONS FOR CURRENT USER
-router.get("/connections/:user_id", (req, res) => {
+router.get("/connections/:userId", (req, res) => {
 
-  const { user_id } = req.params;
+  const { userId } = req.params
 
   const sql = `
-    SELECT 
-      connections.id,
-      users.name,
-      connections.status
+    SELECT users.id, users.name, profiles.languages, profiles.interests
     FROM connections
-    JOIN users ON connections.sender_id = users.id
-    WHERE connections.receiver_id = ?
-  `;
+    JOIN users 
+      ON users.id = connections.sender_id OR users.id = connections.receiver_id
+    LEFT JOIN profiles ON profiles.user_id = users.id
+    WHERE 
+      (connections.sender_id = ? OR connections.receiver_id = ?)
+      AND connections.status = 'accepted'
+      AND users.id != ?
+  `
 
-  db.query(sql, [user_id], (err, results) => {
-    if (err) return res.status(500).json(err);
+  db.query(sql, [userId, userId, userId], (err, results) => {
+    if (err) return res.status(500).json(err)
 
-    res.json(results);
-  });
-
-});
+    res.json(results)
+  })
+})
 
 // ===============================
 // GET CONNECTION REQUESTS
@@ -274,7 +281,7 @@ router.post("/message", (req, res) => {
 
   const { senderId, receiverId, message } = req.body;
 
-  if (!senderId || !receiverId || !message) {
+  if (!senderId || !receiverId || !message.trim()) {
     return res.status(400).json({ message: "All fields required" });
   }
 

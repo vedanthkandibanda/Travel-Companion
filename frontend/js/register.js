@@ -1,27 +1,29 @@
-const form = document.getElementById("registerForm");
+const form = document.querySelector("form");
 
 form.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-e.preventDefault();
+  const name = document.querySelector("input[type='text']").value;
+  const email = document.querySelector("input[type='email']").value;
+  const password = document.querySelector("input[type='password']").value;
 
-const name = document.getElementById("name").value;
-const email = document.getElementById("email").value;
-const password = document.getElementById("password").value;
+  try {
+    const res = await fetch("https://travel-companion-y8fn.onrender.com/api/auth/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ name, email, password })
+    });
 
-const response = await fetch("http://localhost:5000/api/auth/register",{
+    const data = await res.json();
 
-method:"POST",
+    alert(data.message || "Registered successfully ✅");
 
-headers:{
-"Content-Type":"application/json"
-},
+    window.location.href = "login.html";
 
-body:JSON.stringify({name,email,password})
-
-});
-
-const data = await response.json();
-
-alert(data.message);
-
+  } catch (err) {
+    console.error(err);
+    alert("Error registering");
+  }
 });
