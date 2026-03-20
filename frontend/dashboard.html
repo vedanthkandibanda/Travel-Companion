@@ -7,21 +7,43 @@
 <body>
 
 <h2>Dashboard</h2>
+
 <p>Welcome to Travel Companion</p>
 
-<button onclick="getProfile()">Check Profile</button>
-
-<a href="connections.html">My Connections</a>
-
-<p id="result"></p>
-
-<br><br>
+<a href="find-travelers.html">Find Travelers</a><br><br>
+<a href="connections.html">My Connections</a><br><br>
+<a href="add-flight.html">Add Flight</a><br><br>
+<a href="profile.html">Create Profile</a><br><br>
 
 <h3>🔔 Notifications: <span id="notifCount">0</span></h3>
 
 <button onclick="logout()">Logout</button>
 
-<script src="js/dashboard.js"></script>
+<script type="module">
+import BASE_URL from "./js/config.js";
+
+function logout(){
+  localStorage.clear();
+  window.location.href = "login.html";
+}
+
+async function loadNotifications(){
+
+  const userId = localStorage.getItem("userId");
+
+  if (!userId) return;
+
+  const res = await fetch(`${BASE_URL}/api/flights/unread/${userId}`);
+  const data = await res.json();
+
+  document.getElementById("notifCount").innerText = data.count || 0;
+}
+
+setInterval(loadNotifications, 5000);
+loadNotifications();
+
+window.logout = logout;
+</script>
 
 </body>
 </html>

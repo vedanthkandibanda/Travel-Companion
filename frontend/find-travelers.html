@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Find Travelers</title>
+<title>Find Travelers</title>
 </head>
 
 <body>
@@ -11,133 +11,86 @@
 <input type="text" id="flightNumber" placeholder="Enter Flight Number">
 
 <select id="filter">
-  <option value="all">All Travelers</option>
-  <option value="high">🔥 High Match (60%+)</option>
-  <option value="medium">⭐ Medium (30%+)</option>
+  <option value="all">All</option>
+  <option value="high">🔥 High</option>
+  <option value="medium">⭐ Medium</option>
 </select>
 
-<button onclick="findTravelers()">Search</button>
+<button id="searchBtn">Search</button>
 
 <div id="results"></div>
 
+<script type="module">
+import BASE_URL from "./js/config.js";
 
-<script>
+document.getElementById("searchBtn").addEventListener("click", findTravelers);
+
 async function findTravelers(){
 
   const flight = document.getElementById("flightNumber").value;
   const userId = localStorage.getItem("userId");
-  console.log("USER ID:", userId);
 
   if (!userId) {
-    alert("Please login first");
+    alert("Login first");
     window.location.href = "login.html";
     return;
   }
 
-  try {
-    const res = await fetch(`https://travel-companion-y8fn.onrender.com/api/flights/matches/${flight}/${userId}`);
-    const data = await res.json();
+  const res = await fetch(`${BASE_URL}/api/flights/matches/${flight}/${userId}`);
+  const data = await res.json();
 
-if (!Array.isArray(data)) {
-  console.error("Backend error:", data);
-  alert("Server error. Check backend.");
-  return;
-}
-    const filter = document.getElementById("filter").value;
-
-    let filteredData = data;
-
-    const unique = [];
-const seen = new Set();
-
-filteredData.forEach(u => {
-  if (!seen.has(u.id)) {
-    seen.add(u.id);
-    unique.push(u);
+  if (!Array.isArray(data)) {
+    alert("Server error");
+    return;
   }
-});
 
-filteredData = unique;
+  let filtered = data;
 
-    if (filter === "high") {
-      filteredData = data.filter(u => u.score >= 60);
-    }
+  const filter = document.getElementById("filter").value;
 
-    if (filter === "medium") {
-      filteredData = data.filter(u => u.score >= 30);
-    }
-
-    const container = document.getElementById("results");
-    container.innerHTML = "";
-
-    if (filteredData.length === 0) {
-      container.innerHTML = "No travelers yet 😕 Be the first to connect!";
-      return;
-    }
-
-    filteredData.forEach(user => {
-
-  const card = document.createElement("div");
-
-  card.style.border = "1px solid #ddd";
-  card.style.padding = "15px";
-  card.style.margin = "10px";
-  card.style.borderRadius = "10px";
-  card.style.boxShadow = "0 2px 6px rgba(0,0,0,0.1)";
-  card.style.background = "#fff";
-
-  card.innerHTML = `
-    <h3>${user.name}</h3>
-
-    <p><b>Match:</b> ${user.score}%</p>
-
-    <p style="font-size:12px;color:gray;">
-      ${user.score >= 60 ? "🔥 Strong match" : user.score >= 30 ? "⭐ Moderate match" : "🙂 Basic match"}
-    </p>
-
-    <button onclick="connectUser(${user.id})"
-      style="
-        padding:8px 12px;
-        border:none;
-        background:#007bff;
-        color:white;
-        border-radius:5px;
-        cursor:pointer;
-      ">
-      Connect
-    </button>
-  `;
-
-  container.appendChild(card);
-});
-
-  } catch (err) {
-    console.error(err);
-    alert("Error fetching data");
+  if (filter === "high") {
+    filtered = data.filter(u => u.score >= 60);
   }
+
+  if (filter === "medium") {
+    filtered = data.filter(u => u.score >= 30);
+  }
+
+  results.innerHTML = "";
+
+  if (filtered.length === 0) {
+    results.innerHTML = "No travelers 😕";
+    return;
+  }
+
+  filtered.forEach(user => {
+
+    const div = document.createElement("div");
+
+    div.innerHTML = `
+      <h3>${user.name}</h3>
+      <p>Match: ${user.score}%</p>
+      <button onclick="connectUser(${user.id})">Connect</button>
+    `;
+
+    results.appendChild(div);
+  });
 }
 
-async function connectUser(receiverId){
+window.connectUser = async (receiverId) => {
 
   const senderId = localStorage.getItem("userId");
 
-  try {
-    const res = await fetch("https://travel-companion-y8fn.onrender.com/api/flights/connect", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ senderId, receiverId })
-    });
+  const res = await fetch(`${BASE_URL}/api/flights/connect`, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ senderId, receiverId })
+  });
 
-    const data = await res.json();
-    alert(data.message);
+  const data = await res.json();
+  alert(data.message);
+};
 
-  } catch (err) {
-    console.error(err);
-    alert("Error sending request");
-  }
-}
 </script>
 
 </body>
