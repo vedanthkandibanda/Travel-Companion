@@ -29,7 +29,7 @@
 const socket = io("https://travel-companion-y8fn.onrender.com");
 
 const myId = Number(localStorage.getItem("userId"));
-const flightNumber = localStorage.getItem("flightNumber");
+const flightNumber = String(localStorage.getItem("flightNumber"));
 
 const chatBox = document.getElementById("chatBox");
 const msgInput = document.getElementById("msg");
@@ -78,6 +78,7 @@ function renderMessage(senderId, message){
 // 📥 RECEIVE MESSAGE
 // ==============================
 socket.on("receiveFlightMessage", (data) => {
+  if (!data.flightNumber || data.flightNumber !== flightNumber) return;
   renderMessage(data.senderId, data.message);
 });
 

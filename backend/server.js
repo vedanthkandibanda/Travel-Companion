@@ -102,7 +102,8 @@ io.on("connection", (socket) => {
 
     io.to(`flight_${flightNumber}`).emit("receiveFlightMessage", {
       senderId,
-      message
+      message,
+      flightNumber
     });
 
   });
@@ -126,6 +127,10 @@ io.on("connection", (socket) => {
     }
 
   });
+
+  socket.on("receiveFlightMessage", (data) => {
+  renderMessage(data.senderId, data.message);
+});
 
 });
 
