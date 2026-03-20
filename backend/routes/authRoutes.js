@@ -66,9 +66,15 @@ router.post("/login", (req, res) => {
       { expiresIn: "1h" }
     );
 
+    // ✅ FIXED RESPONSE FORMAT
     res.json({
       message: "Login successful",
-      userId: user.id
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email
+      },
+      token
     });
   });
 });

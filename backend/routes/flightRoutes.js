@@ -38,21 +38,19 @@ router.get("/matches/:flight_number/:user_id", (req, res) => {
   console.log("User:", user_id);
 
   const sql = `
-  SELECT 
-    users.id,
-    users.name,
-    flights.flight_number,
-    flights.departure_city,
-    flights.arrival_city,
-    profiles.languages,
-    profiles.interests,
-    profiles.hobbies,
-    profiles.travel_purpose,
-    profiles.university
-  FROM flights
-  JOIN users ON flights.user_id = users.id
-  LEFT JOIN profiles ON profiles.user_id = users.id
-  WHERE flights.flight_number = ?
+    SELECT 
+  users.id,
+  users.name,
+  profiles.languages,
+  profiles.interests,
+  profiles.hobbies,
+  profiles.travel_purpose,
+  profiles.university
+FROM flights
+JOIN users ON flights.user_id = users.id
+LEFT JOIN profiles ON profiles.user_id = users.id
+WHERE flights.flight_number = ?
+GROUP BY users.id
   `;
 
   db.query(sql, [flight_number], (err, results) => {
@@ -64,69 +62,86 @@ router.get("/matches/:flight_number/:user_id", (req, res) => {
 
     console.log("RESULTS:", results);
 
+    // ✅ safety check
     if (!Array.isArray(results)) {
       return res.json([]);
     }
 
-    // ✅ find current user
-    const currentUser = results.find(u => u.id == user_id);
+    // ✅ find current user (FIXED TYPE)
+    const currentUser = results.find(u => u.id === Number(user_id));
 
-    // ✅ filter users
-    let filtered = results;
+    // ✅ remove current user
+    const filtered = results.filter(u => u.id !== Number(user_id));
 
-    if (currentUser) {
-      filtered = results.filter(u => u.id != user_id);
-    }
-
-    // ✅ scoring (SAFE)
+    // ✅ scoring
     const scored = filtered.map(user => {
 
       let score = 0;
       let reasons = [];
 
-      const userLangs = user.languages?.toLowerCase().split(",") || [];
-      const currentLangs = currentUser?.languages?.toLowerCase().split(",") || [];
+      // LANGUAGES
+      if (user.languages && currentUser?.languages) {
+        const u1 = user.languages.toLowerCase().split(",");
+        const u2 = currentUser.languages.toLowerCase().split(",");
 
-      if (userLangs.some(l => currentLangs.includes(l.trim()))) {
-        score += 25;
-        reasons.push("Speaks same language");
+        const match = u1.filter(l => u2.includes(l.trim()));
+
+        if (match.length > 0) {
+          score += 30;
+          reasons.push("Common language");
+        }
       }
 
-      const userInterests = user.interests?.toLowerCase().split(",") || [];
-      const currentInterests = currentUser?.interests?.toLowerCase().split(",") || [];
+      // INTERESTS
+      if (user.interests && currentUser?.interests) {
+        const u1 = user.interests.toLowerCase().split(",");
+        const u2 = currentUser.interests.toLowerCase().split(",");
 
-      if (userInterests.some(i => currentInterests.includes(i.trim()))) {
-        score += 35;
-        reasons.push("Shared interests");
+        const match = u1.filter(i => u2.includes(i.trim()));
+
+        score += match.length * 20;
+
+        if (match.length > 0) {
+          reasons.push("Shared interests");
+        }
       }
 
-      const userHobbies = user.hobbies?.toLowerCase().split(",") || [];
-      const currentHobbies = currentUser?.hobbies?.toLowerCase().split(",") || [];
+      // HOBBIES
+      if (user.hobbies && currentUser?.hobbies) {
+        const h1 = user.hobbies.toLowerCase().split(",");
+        const h2 = currentUser.hobbies.toLowerCase().split(",");
 
-      if (userHobbies.some(h => currentHobbies.includes(h.trim()))) {
-        score += 15;
-        reasons.push("Similar hobbies");
+        const match = h1.filter(h => h2.includes(h.trim()));
+
+        score += match.length * 10;
+
+        if (match.length > 0) {
+          reasons.push("Similar hobbies");
+        }
       }
 
-      if (currentUser && user.travel_purpose === currentUser.travel_purpose) {
-        score += 15;
-        reasons.push("Same travel purpose");
+      // PURPOSE
+      if (user.travel_purpose && currentUser?.travel_purpose) {
+        if (user.travel_purpose === currentUser.travel_purpose) {
+          score += 20;
+          reasons.push("Same travel purpose");
+        }
       }
 
+      // UNIVERSITY
       if (
-        currentUser &&
         user.university &&
-        currentUser.university &&
+        currentUser?.university &&
         user.university.toLowerCase() === currentUser.university.toLowerCase()
       ) {
-        score += 10;
+        score += 15;
         reasons.push("Same university");
       }
 
       return { ...user, score, reasons };
     });
 
-    // ✅ sort
+    // ✅ sort by best match
     scored.sort((a, b) => b.score - a.score);
 
     res.json(scored);
@@ -161,6 +176,29 @@ router.post("/connect", (req, res) => {
     })
   })
 })
+
+// ✅ GET CONNECTIONS FOR CURRENT USER
+router.get("/connections/:user_id", (req, res) => {
+
+  const { user_id } = req.params;
+
+  const sql = `
+    SELECT 
+      connections.id,
+      users.name,
+      connections.status
+    FROM connections
+    JOIN users ON connections.sender_id = users.id
+    WHERE connections.receiver_id = ?
+  `;
+
+  db.query(sql, [user_id], (err, results) => {
+    if (err) return res.status(500).json(err);
+
+    res.json(results);
+  });
+
+});
 
 // ===============================
 // GET CONNECTION REQUESTS
@@ -261,16 +299,21 @@ router.get("/messages/:user1/:user2", (req, res) => {
   const { user1, user2 } = req.params;
 
   const sql = `
-    SELECT * FROM messages
+    SELECT * 
+    FROM messages
     WHERE 
       (sender_id = ? AND receiver_id = ?)
-      OR
+      OR 
       (sender_id = ? AND receiver_id = ?)
-    ORDER BY created_at ASC
+    ORDER BY id ASC
   `;
 
   db.query(sql, [user1, user2, user2, user1], (err, results) => {
-    if (err) return res.status(500).json(err);
+
+    if (err) {
+      console.log("MESSAGE ERROR:", err);
+      return res.status(500).json({ error: err.message });
+    }
 
     res.json(results);
   });
