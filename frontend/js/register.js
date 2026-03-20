@@ -10,7 +10,7 @@ form.addEventListener("submit", async (e) => {
   const password = document.querySelector("input[type='password']").value.trim();
 
   try {
-    const res = await fetch(`${BASE_URL}/api/auth/register`, {
+    const res = await fetch(`${BASE_URL}/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

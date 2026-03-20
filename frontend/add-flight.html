@@ -45,7 +45,7 @@ document.getElementById("flightForm").addEventListener("submit", async (e) => {
     seat_number: seat_number.value
   };
 
-  const res = await fetch(`${BASE_URL}/api/flights/add`, {
+  const res = await fetch(`${BASE_URL}/flights/add`, {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify(data)

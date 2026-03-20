@@ -27,7 +27,7 @@ if (!senderId || !receiverId) {
 
 async function loadMessages(){
 
-  const res = await fetch(`${BASE_URL}/api/flights/messages/${senderId}/${receiverId}`);
+  const res = await fetch(`${BASE_URL}/flights/messages/${senderId}/${receiverId}`);
   const data = await res.json();
 
   const chatBox = document.getElementById("chatBox");
@@ -62,7 +62,7 @@ async function sendMessage(){
   const message = msg.value.trim();
   if (!message) return;
 
-  await fetch(`${BASE_URL}/api/flights/message`, {
+  await fetch(`${BASE_URL}/flights/message`, {
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify({ senderId, receiverId, message })

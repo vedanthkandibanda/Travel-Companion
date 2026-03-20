@@ -16,7 +16,7 @@ profileForm.addEventListener("submit", async (e) => {
     university: university.value
   };
 
-  const res = await fetch(`${BASE_URL}/api/profile/save`, {
+  const res = await fetch(`${BASE_URL}/profile/save`, {
     method:"POST",
     headers:{ "Content-Type":"application/json" },
     body: JSON.stringify(data)

@@ -33,7 +33,7 @@ async function loadNotifications(){
 
   if (!userId) return;
 
-  const res = await fetch(`${BASE_URL}/api/flights/unread/${userId}`);
+  const res = await fetch(`${BASE_URL}/flights/unread/${userId}`);
   const data = await res.json();
 
   document.getElementById("notifCount").innerText = data.count || 0;

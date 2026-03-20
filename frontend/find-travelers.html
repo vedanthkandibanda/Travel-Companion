@@ -36,7 +36,7 @@ async function findTravelers(){
     return;
   }
 
-  const res = await fetch(`${BASE_URL}/api/flights/matches/${flight}/${userId}`);
+  const res = await fetch(`${BASE_URL}/flights/matches/${flight}/${userId}`);
   const data = await res.json();
 
   if (!Array.isArray(data)) {
@@ -81,7 +81,7 @@ window.connectUser = async (receiverId) => {
 
   const senderId = localStorage.getItem("userId");
 
-  const res = await fetch(`${BASE_URL}/api/flights/connect`, {
+  const res = await fetch(`${BASE_URL}/flights/connect`, {
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify({ senderId, receiverId })

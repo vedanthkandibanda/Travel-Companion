@@ -5,7 +5,7 @@ const userId = localStorage.getItem("userId");
 
 async function loadConnections(){
 
-  const res = await fetch(`${BASE_URL}/api/flights/requests/${userId}`);
+  const res = await fetch(`${BASE_URL}/flights/requests/${userId}`);
   const data = await res.json();
 
   requests.innerHTML = "";
@@ -39,7 +39,7 @@ window.openChat = (id) => {
 
 async function loadAccepted(){
 
-  const res = await fetch(`${BASE_URL}/api/flights/connections/${userId}`);
+  const res = await fetch(`${BASE_URL}/flights/connections/${userId}`);
   const data = await res.json();
 
   acceptedList.innerHTML = "";
