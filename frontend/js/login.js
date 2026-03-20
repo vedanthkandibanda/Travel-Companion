@@ -1,3 +1,5 @@
+import BASE_URL from "./config.js";
+
 const form = document.getElementById("loginForm");
 
 form.addEventListener("submit", async (e) => {
@@ -7,7 +9,7 @@ form.addEventListener("submit", async (e) => {
   const password = document.getElementById("password").value.trim();
 
   try {
-    const response = await fetch("https://travel-companion-y8fn.onrender.com/api/auth/login", {
+    const response = await fetch(`${BASE_URL}/api/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -17,13 +19,12 @@ form.addEventListener("submit", async (e) => {
 
     const data = await response.json();
 
-    console.log("LOGIN RESPONSE:", data); // 🔥 DEBUG
+    console.log("LOGIN RESPONSE:", data);
 
-    // ✅ HANDLE BOTH POSSIBLE FORMATS
-    const userId = data.user?.id || data.userId;
-
-    if (userId) {
-      localStorage.setItem("userId", userId);
+    if (data.user?.id) {
+      // ✅ store everything needed
+      localStorage.setItem("userId", data.user.id);
+      localStorage.setItem("token", data.token);
 
       alert("Login successful 🚀");
       window.location.href = "dashboard.html";
@@ -33,6 +34,6 @@ form.addEventListener("submit", async (e) => {
 
   } catch (err) {
     console.error(err);
-    alert("Server error during login");
+    alert("Server error");
   }
 });

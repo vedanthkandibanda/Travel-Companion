@@ -1,14 +1,16 @@
+import BASE_URL from "./config.js";
+
 const form = document.querySelector("form");
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const name = document.querySelector("input[type='text']").value;
-  const email = document.querySelector("input[type='email']").value;
-  const password = document.querySelector("input[type='password']").value;
+  const name = document.querySelector("input[type='text']").value.trim();
+  const email = document.querySelector("input[type='email']").value.trim();
+  const password = document.querySelector("input[type='password']").value.trim();
 
   try {
-    const res = await fetch("https://travel-companion-y8fn.onrender.com/api/auth/register", {
+    const res = await fetch(`${BASE_URL}/api/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -18,7 +20,7 @@ form.addEventListener("submit", async (e) => {
 
     const data = await res.json();
 
-    alert(data.message || "Registered successfully ✅");
+    alert(data.message || "Registered ✅");
 
     window.location.href = "login.html";
 

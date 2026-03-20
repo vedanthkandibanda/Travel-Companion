@@ -38,21 +38,24 @@ router.post("/add", (req, res) => {
 // CONNECTION REQUEST
 // ===============================
 router.post("/connect", (req, res) => {
+
   const { senderId, receiverId } = req.body;
 
-  const check = `SELECT * FROM connections WHERE sender_id=? AND receiver_id=?`;
+  const sql = `
+    INSERT INTO connections (sender_id, receiver_id, status)
+    VALUES (?, ?, 'pending')
+  `;
 
-  db.query(check, [senderId, receiverId], (err, result) => {
-    if (result.length > 0) {
-      return res.json({ message: "Already requested" });
+  db.query(sql, [senderId, receiverId], (err) => {
+
+    if (err) {
+      if (err.code === "ER_DUP_ENTRY") {
+        return res.json({ message: "Already requested" });
+      }
+      return res.status(500).json(err);
     }
 
-    const insert = `INSERT INTO connections (sender_id, receiver_id) VALUES (?, ?)`;
-
-    db.query(insert, [senderId, receiverId], (err) => {
-      if (err) return res.status(500).json(err);
-      res.json({ message: "Request sent 🚀" });
-    });
+    res.json({ message: "Request sent 🚀" });
   });
 });
 

@@ -1,58 +1,29 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Create Profile</title>
-</head>
+<script type="module">
+import BASE_URL from "./js/config.js";
 
-<body>
+profileForm.addEventListener("submit", async (e) => {
 
-<h2>Create Your Travel Profile</h2>
+  e.preventDefault();
 
-<form id="profileForm">
+  const user_id = localStorage.getItem("userId");
 
-<input type="number" id="user_id" placeholder="User ID" required><br><br>
+  const data = {
+    user_id,
+    languages: languages.value,
+    interests: interests.value,
+    hobbies: hobbies.value,
+    travel_purpose: travel_purpose.value,
+    university: university.value
+  };
 
-<input type="text" id="languages" placeholder="Languages (comma separated)"><br><br>
+  const res = await fetch(`${BASE_URL}/api/profile/save`, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify(data)
+  });
 
-<input type="text" id="interests" placeholder="Interests"><br><br>
+  const result = await res.json();
+  alert(result.message);
 
-<input type="text" id="hobbies" placeholder="Hobbies"><br><br>
-
-<input type="text" id="travel_purpose" placeholder="Travel Purpose"><br><br>
-
-<input type="text" id="university" placeholder="University (optional)"><br><br>
-
-<button type="submit">Save Profile</button>
-
-</form>
-
-<script>
-
-document.getElementById("profileForm").addEventListener("submit", async function(e){
-
-e.preventDefault()
-
-const data = {
-user_id: document.getElementById("user_id").value,
-languages: document.getElementById("languages").value,
-interests: document.getElementById("interests").value,
-hobbies: document.getElementById("hobbies").value,
-travel_purpose: document.getElementById("travel_purpose").value,
-university: document.getElementById("university").value
-}
-
-const res = await fetch("https://travel-companion-y8fn.onrender.com/api/profile/add",{
-method:"POST",
-headers:{ "Content-Type":"application/json" },
-body:JSON.stringify(data)
-})
-
-const result = await res.json()
-alert(result.message)
-
-})
-
+});
 </script>
-
-</body>
-</html>

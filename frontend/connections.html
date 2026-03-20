@@ -1,157 +1,59 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>My Connections</title>
-</head>
-<body>
+<script type="module">
+import BASE_URL from "./js/config.js";
 
-<h2>📩 Connection Requests</h2>
-<div id="requests"></div>
-
-<h2>🤝 Accepted Connections</h2>
-<div id="acceptedList"></div>
-
-
-<script>
+const userId = localStorage.getItem("userId");
 
 async function loadConnections(){
 
-  const userId = localStorage.getItem("userId");
-
-  const res = await fetch(`https://travel-companion-y8fn.onrender.com/api/flights/requests/${userId}`);
+  const res = await fetch(`${BASE_URL}/api/flights/requests/${userId}`);
   const data = await res.json();
 
-  const requestDiv = document.getElementById("requests");
-  requestDiv.innerHTML = "";
+  requests.innerHTML = "";
 
-  if (!Array.isArray(data) || data.length === 0) {
-    requestDiv.innerHTML = "No pending requests 😕";
-    return;
-  }
-
-  // ✅ remove duplicates
-  const seen = new Set();
-  const unique = data.filter(conn => {
-    if (seen.has(conn.id)) return false;
-    seen.add(conn.id);
-    return true;
-  });
-
-  unique.forEach(conn => {
-
+  data.forEach(conn => {
     if (conn.status !== "pending") return;
 
-    const card = document.createElement("div");
-
-    card.style.border = "1px solid #ddd";
-    card.style.padding = "10px";
-    card.style.margin = "10px";
-    card.style.borderRadius = "8px";
-
-    card.innerHTML = `
-      <h3>👤 ${conn.name}</h3>
-      <button onclick="acceptRequest(${conn.id})"
-        style="padding:6px 10px;background:green;color:white;border:none;border-radius:5px;">
-        Accept
-      </button>
+    requests.innerHTML += `
+      <div>
+        ${conn.name}
+        <button onclick="acceptRequest(${conn.id})">Accept</button>
+      </div>
     `;
-
-    requestDiv.appendChild(card);
   });
 }
 
-
-// ✅ ACCEPT REQUEST
 async function acceptRequest(id){
-
-  const res = await fetch("https://travel-companion-y8fn.onrender.com/api/flights/accept", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ connectionId: id })
+  await fetch(`${BASE_URL}/api/flights/accept`, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ connectionId:id })
   });
-
-  const data = await res.json();
-
-  alert(data.message || "Accepted ✅");
-
   loadConnections();
   loadAccepted();
 }
 
-
-// ✅ OPEN CHAT
-function openChat(id){
-
-  console.log("Opening chat with:", id);
-
-  // 🔥 IMPORTANT
+window.openChat = (id) => {
   localStorage.setItem("chatUserId", id);
-
   window.location.href = "chat.html";
-}
+};
 
-
-// ✅ LOAD ACCEPTED CONNECTIONS
 async function loadAccepted(){
 
-  const userId = localStorage.getItem("userId");
-
-  const res = await fetch(`https://travel-companion-y8fn.onrender.com/api/flights/connections/${userId}`);
+  const res = await fetch(`${BASE_URL}/api/flights/connections/${userId}`);
   const data = await res.json();
 
-  const div = document.getElementById("acceptedList");
-  div.innerHTML = "";
+  acceptedList.innerHTML = "";
 
-  if (!Array.isArray(data) || data.length === 0){
-    div.innerHTML = "No connections yet 🤝";
-    return;
-  }
-
-  // ✅ remove duplicates
-  const seen = new Set();
-  const unique = data.filter(user => {
-    if (seen.has(user.id)) return false;
-    seen.add(user.id);
-    return true;
-  });
-
-  unique.forEach(user => {
-
-    const card = document.createElement("div");
-
-    card.style.border = "1px solid #ccc";
-    card.style.padding = "10px";
-    card.style.margin = "10px";
-    card.style.borderRadius = "8px";
-    card.style.boxShadow = "0 2px 5px rgba(0,0,0,0.1)";
-
-    card.innerHTML = `
-      <h3>${user.name}</h3>
-      <p>Languages: ${user.languages || "N/A"}</p>
-      <p>Interests: ${user.interests || "N/A"}</p>
-
-      <button onclick="openChat(${user.id})"
-        style="padding:6px 10px;background:#007bff;color:white;border:none;border-radius:5px;">
-        Message
-      </button>
+  data.forEach(user => {
+    acceptedList.innerHTML += `
+      <div>
+        ${user.name}
+        <button onclick="openChat(${user.id})">Chat</button>
+      </div>
     `;
-
-    div.appendChild(card);
   });
 }
 
-
-// ✅ INITIAL LOAD
 loadConnections();
 loadAccepted();
-
-
-// ✅ AUTO REFRESH (SAFE INTERVAL)
-setInterval(loadConnections, 7000);
-setInterval(loadAccepted, 7000);
 </script>
-
-</body>
-</html>
