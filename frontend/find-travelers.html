@@ -28,13 +28,26 @@
 
 <script>
 
+// ✅ FIX 1: BASE_URL added
+const BASE_URL = "https://travel-companion-y8fn.onrender.com/api";
+
 const socket = io("https://travel-companion-y8fn.onrender.com");
 
+
+// ==============================
+// 👥 CHECK GROUP
+// ==============================
 function checkGroup(flight){
+
+  if(!flight){
+    alert("Enter flight number");
+    return;
+  }
 
   socket.emit("getFlightCount", flight);
 
-  socket.on("flightCount", (data) => {
+  // ✅ FIX 2: use ONCE (avoid duplicate popups)
+  socket.once("flightCount", (data) => {
 
     if(data.flightNumber !== flight) return;
 
@@ -50,12 +63,21 @@ function checkGroup(flight){
   });
 }
 
+
+// ==============================
+// 🔍 FIND TRAVELERS
+// ==============================
 document.getElementById("searchBtn").addEventListener("click", findTravelers);
 
 async function findTravelers(){
 
   const flight = document.getElementById("flightNumber").value;
   const userId = localStorage.getItem("userId");
+
+  if (!flight){
+    alert("Enter flight number");
+    return;
+  }
 
   if (!userId) {
     alert("Login first");
@@ -83,6 +105,8 @@ async function findTravelers(){
     filtered = data.filter(u => u.score >= 30);
   }
 
+  // ✅ FIX 3: define results
+  const results = document.getElementById("results");
   results.innerHTML = "";
 
   if (filtered.length === 0) {
@@ -104,6 +128,10 @@ async function findTravelers(){
   });
 }
 
+
+// ==============================
+// 🤝 CONNECT USER
+// ==============================
 window.connectUser = async (receiverId) => {
 
   const senderId = localStorage.getItem("userId");
