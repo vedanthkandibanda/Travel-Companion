@@ -1,59 +1,111 @@
-<script type="module">
-import BASE_URL from "./js/config.js";
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Connections</title>
+</head>
 
-const userId = localStorage.getItem("userId");
+<body>
 
+<h2>📩 Connection Requests</h2>
+<div id="requests"></div>
+
+<h2>🤝 Accepted Connections</h2>
+<div id="acceptedList"></div>
+
+<script src="js/config.js"></script>
+
+<script>
+
+const BASE_URL = "https://travel-companion-y8fn.onrender.com/api";
+
+// ✅ LOAD REQUESTS
 async function loadConnections(){
+
+  const userId = localStorage.getItem("userId");
 
   const res = await fetch(`${BASE_URL}/flights/requests/${userId}`);
   const data = await res.json();
 
+  const requests = document.getElementById("requests");
   requests.innerHTML = "";
 
+  if (!Array.isArray(data) || data.length === 0) {
+    requests.innerHTML = "No pending requests 😕";
+    return;
+  }
+
   data.forEach(conn => {
+
     if (conn.status !== "pending") return;
 
-    requests.innerHTML += `
-      <div>
-        ${conn.name}
-        <button onclick="acceptRequest(${conn.id})">Accept</button>
-      </div>
+    const card = document.createElement("div");
+
+    card.innerHTML = `
+      <h3>${conn.name}</h3>
+      <button onclick="acceptRequest(${conn.id})">Accept</button>
     `;
+
+    requests.appendChild(card);
   });
 }
 
+
+// ✅ ACCEPT REQUEST
 async function acceptRequest(id){
-  await fetch(`${BASE_URL}/api/flights/accept`, {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ connectionId:id })
+
+  await fetch(`${BASE_URL}/flights/accept`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ connectionId: id })
   });
+
   loadConnections();
   loadAccepted();
 }
 
-window.openChat = (id) => {
-  localStorage.setItem("chatUserId", id);
-  window.location.href = "chat.html";
-};
 
+// ✅ LOAD ACCEPTED
 async function loadAccepted(){
+
+  const userId = localStorage.getItem("userId");
 
   const res = await fetch(`${BASE_URL}/flights/connections/${userId}`);
   const data = await res.json();
 
+  const acceptedList = document.getElementById("acceptedList");
   acceptedList.innerHTML = "";
 
+  if (!Array.isArray(data) || data.length === 0){
+    acceptedList.innerHTML = "No connections yet 🤝";
+    return;
+  }
+
   data.forEach(user => {
-    acceptedList.innerHTML += `
-      <div>
-        ${user.name}
-        <button onclick="openChat(${user.id})">Chat</button>
-      </div>
+
+    const card = document.createElement("div");
+
+    card.innerHTML = `
+      <h3>${user.name}</h3>
+      <button onclick="openChat(${user.id})">Chat</button>
     `;
+
+    acceptedList.appendChild(card);
   });
 }
 
+
+// ✅ OPEN CHAT
+function openChat(id){
+  localStorage.setItem("chatUserId", id);
+  window.location.href = "chat.html";
+}
+
+
+// ✅ INIT
 loadConnections();
 loadAccepted();
+
 </script>
+
+</body>
+</html>

@@ -1,29 +1,73 @@
-<script type="module">
-import BASE_URL from "./js/config.js";
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Profile</title>
+</head>
 
-profileForm.addEventListener("submit", async (e) => {
+<body>
 
-  e.preventDefault();
+<h2>👤 Your Profile</h2>
 
-  const user_id = localStorage.getItem("userId");
+<div id="profileBox">
+  Loading...
+</div>
 
-  const data = {
-    user_id,
-    languages: languages.value,
-    interests: interests.value,
-    hobbies: hobbies.value,
-    travel_purpose: travel_purpose.value,
-    university: university.value
-  };
+<br>
 
-  const res = await fetch(`${BASE_URL}/profile/save`, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify(data)
-  });
+<button onclick="logout()">Logout</button>
 
-  const result = await res.json();
-  alert(result.message);
+<script src="js/config.js"></script>
 
-});
+<script>
+
+// ✅ LOAD PROFILE
+async function getProfile() {
+
+  const token = localStorage.getItem("token");
+
+  try {
+
+    const res = await fetch(`${BASE_URL}/auth/profile`, {
+      method: "GET",
+      headers: {
+        Authorization: "Bearer " + token
+      }
+    });
+
+    const data = await res.json();
+
+    const box = document.getElementById("profileBox");
+
+    if (!data || !data.user) {
+      box.innerHTML = "❌ Failed to load profile";
+      return;
+    }
+
+    box.innerHTML = `
+      <p><b>ID:</b> ${data.user.id}</p>
+      <p><b>Name:</b> ${data.user.name}</p>
+      <p><b>Email:</b> ${data.user.email}</p>
+    `;
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById("profileBox").innerHTML = "Server error ❌";
+  }
+}
+
+
+// ✅ LOGOUT
+function logout() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("userId");
+  window.location.href = "login.html";
+}
+
+
+// ✅ INIT
+getProfile();
+
 </script>
+
+</body>
+</html>
