@@ -166,4 +166,77 @@ router.get("/unread/:userId", (req, res) => {
   );
 });
 
+router.get("/matches/:flight_number/:user_id", (req, res) => {
+
+  const { flight_number, user_id } = req.params;
+
+  const sql = `
+    SELECT DISTINCT
+      users.id,
+      users.name,
+      profiles.languages,
+      profiles.interests,
+      profiles.hobbies,
+      profiles.travel_purpose,
+      profiles.university
+    FROM flights
+    JOIN users ON flights.user_id = users.id
+    LEFT JOIN profiles ON profiles.user_id = users.id
+    WHERE flights.flight_number = ?
+  `;
+
+  db.query(sql, [flight_number], (err, results) => {
+
+    if (err) return res.status(500).json(err);
+
+    const currentUser = results.find(u => u.id === Number(user_id));
+
+    const filtered = results.filter(u => u.id !== Number(user_id));
+
+    const scored = filtered.map(user => {
+
+      let score = 0;
+
+      if (user.languages && currentUser?.languages) {
+        const u1 = user.languages.toLowerCase().split(",");
+        const u2 = currentUser.languages.toLowerCase().split(",");
+        const match = u1.filter(l => u2.includes(l.trim()));
+        if (match.length > 0) score += 30;
+      }
+
+      if (user.interests && currentUser?.interests) {
+        const u1 = user.interests.toLowerCase().split(",");
+        const u2 = currentUser.interests.toLowerCase().split(",");
+        const match = u1.filter(i => u2.includes(i.trim()));
+        score += match.length * 20;
+      }
+
+      if (user.hobbies && currentUser?.hobbies) {
+        const h1 = user.hobbies.toLowerCase().split(",");
+        const h2 = currentUser.hobbies.toLowerCase().split(",");
+        const match = h1.filter(h => h2.includes(h.trim()));
+        score += match.length * 10;
+      }
+
+      if (user.travel_purpose === currentUser?.travel_purpose) {
+        score += 20;
+      }
+
+      if (
+        user.university &&
+        currentUser?.university &&
+        user.university.toLowerCase() === currentUser.university.toLowerCase()
+      ) {
+        score += 15;
+      }
+
+      return { ...user, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+
+    res.json(scored);
+  });
+});
+
 module.exports = router;
