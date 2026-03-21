@@ -1,149 +1,157 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Find Travelers</title>
+  <title>Find Travelers</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f4f7f6; }
+    .card { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    input, select, button { padding: 10px; margin: 5px; border-radius: 5px; border: 1px solid #ccc; }
+    button { background: #2563eb; color: white; cursor: pointer; border: none; }
+    button:hover { background: #1d4ed8; }
+    #viewGroupBtn { background: #059669; } /* Green button for group */
+  </style>
 </head>
 
 <body>
 
 <h2>Find Travelers On Your Flight</h2>
 
-<input type="text" id="flightNumber" placeholder="Enter Flight Number">
+<input type="text" id="flightNumber" placeholder="Enter Flight Number (e.g. AI101)">
 
 <select id="filter">
-  <option value="all">All</option>
-  <option value="high">🔥 High</option>
-  <option value="medium">⭐ Medium</option>
+  <option value="all">All Matches</option>
+  <option value="high">🔥 High Match (60%+)</option>
+  <option value="medium">⭐ Medium Match (30%+)</option>
 </select>
 
-<button id="searchBtn">Search</button>
+<br>
 
-<button onclick="checkGroup(document.getElementById('flightNumber').value)">
-  View Flight Group
-</button>
+<button id="searchBtn">Search Travelers</button>
+<button id="viewGroupBtn">View Flight Group</button>
 
 <div id="results"></div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
 <script>
-
-// ✅ FIX 1: BASE_URL added
 const BASE_URL = "https://travel-companion-y8fn.onrender.com/api";
-
 const socket = io("https://travel-companion-y8fn.onrender.com");
 
+const flightInput = document.getElementById("flightNumber");
+const resultsDiv = document.getElementById("results");
 
 // ==============================
-// 👥 CHECK GROUP
+// 👥 CHECK GROUP (FIXED LOGIC)
 // ==============================
-function checkGroup(flight){
+async function checkGroup() {
+  const flight = flightInput.value.trim().toUpperCase();
 
-  if(!flight){
-    alert("Enter flight number");
+  if (!flight) {
+    alert("Please enter a flight number first.");
     return;
   }
 
+  // Show visual feedback
+  const originalText = document.getElementById("viewGroupBtn").innerText;
+  document.getElementById("viewGroupBtn").innerText = "Checking...";
+
+  // 1. Ask server for count
   socket.emit("getFlightCount", flight);
 
-  // ✅ FIX 2: use ONCE (avoid duplicate popups)
+  // 2. Listen for the specific response
   socket.once("flightCount", (data) => {
+    document.getElementById("viewGroupBtn").innerText = originalText;
 
-    if(data.flightNumber !== flight) return;
+    // Convert both to string/trim to ensure match
+    if (String(data.flightNumber).trim().toUpperCase() !== flight) {
+      console.log("Mismatched flight count received");
+      return;
+    }
 
     const join = confirm(
-      `✈️ Flight ${flight}\n👥 ${data.count} people already joined\n\nDo you want to join group chat?`
+      `✈️ Flight ${flight}\n👥 ${data.count || 0} people are online in this group.\n\nDo you want to join the group chat?`
     );
 
     if (join) {
       localStorage.setItem("flightNumber", flight);
       window.location.href = "flight-chat.html";
     }
-
   });
 }
+
+// Attach listener to the button
+document.getElementById("viewGroupBtn").onclick = checkGroup;
 
 
 // ==============================
 // 🔍 FIND TRAVELERS
 // ==============================
-document.getElementById("searchBtn").addEventListener("click", findTravelers);
-
-async function findTravelers(){
-
-  const flight = document.getElementById("flightNumber").value;
+document.getElementById("searchBtn").onclick = async function findTravelers() {
+  const flight = flightInput.value.trim().toUpperCase();
   const userId = localStorage.getItem("userId");
 
-  if (!flight){
-    alert("Enter flight number");
-    return;
+  if (!flight) { alert("Enter flight number"); return; }
+  if (!userId) { alert("Login first"); window.location.href = "login.html"; return; }
+
+  resultsDiv.innerHTML = "Searching for travelers... 🔍";
+
+  try {
+    const res = await fetch(`${BASE_URL}/flights/matches/${flight}/${userId}`);
+    const data = await res.json();
+
+    if (!Array.isArray(data)) {
+      resultsDiv.innerHTML = "No travelers found or server error.";
+      return;
+    }
+
+    const filterVal = document.getElementById("filter").value;
+    let filtered = data;
+
+    if (filterVal === "high") filtered = data.filter(u => u.score >= 60);
+    else if (filterVal === "medium") filtered = data.filter(u => u.score >= 30);
+
+    resultsDiv.innerHTML = "";
+
+    if (filtered.length === 0) {
+      resultsDiv.innerHTML = "No matching travelers found on this flight. 😕";
+      return;
+    }
+
+    filtered.forEach(user => {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <h3>${user.name}</h3>
+        <p>Match Score: <strong>${user.score}%</strong></p>
+        <button onclick="connectUser(${user.id})">Send Connection Request</button>
+      `;
+      resultsDiv.appendChild(div);
+    });
+
+  } catch (err) {
+    console.error(err);
+    resultsDiv.innerHTML = "Failed to connect to server. ❌";
   }
-
-  if (!userId) {
-    alert("Login first");
-    window.location.href = "login.html";
-    return;
-  }
-
-  const res = await fetch(`${BASE_URL}/flights/matches/${flight}/${userId}`);
-  const data = await res.json();
-
-  if (!Array.isArray(data)) {
-    alert("Server error");
-    return;
-  }
-
-  let filtered = data;
-
-  const filter = document.getElementById("filter").value;
-
-  if (filter === "high") {
-    filtered = data.filter(u => u.score >= 60);
-  }
-
-  if (filter === "medium") {
-    filtered = data.filter(u => u.score >= 30);
-  }
-
-  // ✅ FIX 3: define results
-  const results = document.getElementById("results");
-  results.innerHTML = "";
-
-  if (filtered.length === 0) {
-    results.innerHTML = "No travelers 😕";
-    return;
-  }
-
-  filtered.forEach(user => {
-
-    const div = document.createElement("div");
-
-    div.innerHTML = `
-      <h3>${user.name}</h3>
-      <p>Match: ${user.score}%</p>
-      <button onclick="connectUser(${user.id})">Connect</button>
-    `;
-
-    results.appendChild(div);
-  });
-}
+};
 
 
 // ==============================
 // 🤝 CONNECT USER
 // ==============================
 window.connectUser = async (receiverId) => {
-
   const senderId = localStorage.getItem("userId");
-
-  const res = await fetch(`${BASE_URL}/flights/connect`, {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ senderId, receiverId })
-  });
-
-  const data = await res.json();
-  alert(data.message);
+  
+  try {
+    const res = await fetch(`${BASE_URL}/flights/connect`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ senderId, receiverId })
+    });
+    const data = await res.json();
+    alert(data.message || "Request sent!");
+  } catch (err) {
+    alert("Error sending request.");
+  }
 };
 
 </script>
