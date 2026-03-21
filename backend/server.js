@@ -42,11 +42,21 @@ io.on("connection", (socket) => {
   });
 
   socket.on("sendMessage", ({ senderId, receiverId, message }) => {
-    io.to(`user_${receiverId}`).emit("receiveMessage", {
-      senderId,
-      receiverId,
-      message
-    });
+
+  // send to receiver
+  io.to(`user_${receiverId}`).emit("receiveMessage", {
+    senderId,
+    receiverId,
+    message
+  });
+
+  // ✅ ALSO send back to sender (FIX)
+  io.to(`user_${senderId}`).emit("receiveMessage", {
+    senderId,
+    receiverId,
+    message
+  });
+
   });
 
   // GROUP JOIN (FIXED)
