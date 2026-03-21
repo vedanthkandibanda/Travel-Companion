@@ -72,12 +72,10 @@ function renderMessage(sender_id, message) {
 // ==============================
 socket.on("receiveMessage", (data) => {
 
-  if (
-    (data.senderId === myId && data.receiverId === receiverId) ||
-    (data.senderId === receiverId && data.receiverId === myId)
-  ) {
-    renderMessage(data.senderId, data.message);
-  }
+  // ✅ Only check if this chat belongs to current conversation
+  if (data.senderId !== receiverId && data.senderId !== myId) return;
+
+  renderMessage(data.senderId, data.message);
 
 });
 
