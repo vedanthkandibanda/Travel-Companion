@@ -44,6 +44,7 @@ io.on("connection", (socket) => {
   socket.on("sendMessage", ({ senderId, receiverId, message }) => {
     io.to(`user_${receiverId}`).emit("receiveMessage", {
       senderId,
+      receiverId,
       message
     });
   });

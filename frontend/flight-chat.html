@@ -148,8 +148,6 @@ function sendMessage(){
   const message = msgInput.value.trim();
   if (!message) return;
 
-  renderMessage(myId, message);
-
   socket.emit("sendFlightMessage", {
     senderId: myId,
     flightNumber,
