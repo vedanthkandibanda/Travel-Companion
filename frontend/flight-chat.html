@@ -77,6 +77,11 @@ socket.on("receiveFlightMessage", (data) => {
   if (data.flightNumber !== flightNumber) return;
   renderMessage(data.senderId, data.message, data.messageId, data.time);
 
+  // TRIGGER GROUP NOTIFICATION
+    if (data.senderId !== myId) {
+        showNotification(`Flight ${flightNumber} Group`, data.message);
+    }
+
   if (data.senderId === myId) {
     const tick = document.getElementById(`status-${data.messageId}`);
     if (tick) tick.innerText = "✓✓";

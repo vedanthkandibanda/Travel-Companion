@@ -151,6 +151,47 @@ async function sendMessage() {
   socket.emit("sendMessage", { senderId: myId, receiverId, message, messageId });
 }
 
+// ==============================
+// 🔔 NOTIFICATION SYSTEM
+// ==============================
+
+// Request permission as soon as the chat starts
+if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+    Notification.requestPermission();
+}
+
+function showNotification(senderName, messageText) {
+    // Only show if the user is NOT looking at the chat tab
+    if (document.hidden && Notification.permission === "granted") {
+        const notification = new Notification(`New Message from ${senderName}`, {
+            body: messageText,
+            icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png", // Standard chat icon
+            badge: "https://cdn-icons-png.flaticon.com/512/733/733585.png"
+        });
+
+        // Clicking the notification brings the user back to the tab
+        notification.onclick = () => {
+            window.focus();
+            notification.close();
+        };
+    }
+}
+
+// ==============================
+// UPDATE RECEIVE MESSAGE
+// ==============================
+socket.on("receiveMessage", (data) => {
+    if (data.senderId !== receiverId && data.senderId !== myId) return;
+
+    // ... your existing renderMessage() call ...
+    
+    // TRIGGER THE NOTIFICATION
+    // If it's from the other person (not me), show the alert
+    if (data.senderId === receiverId) {
+        showNotification("Travel Companion", data.message);
+    }
+});
+
 async function loadMessages() {
   try {
     const res = await fetch(`${BASE_URL}/flights/messages/${myId}/${receiverId}`);
