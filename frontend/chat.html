@@ -195,18 +195,22 @@ function showNotification(senderName, messageText) {
 // ==============================
 // UPDATE RECEIVE MESSAGE
 // ==============================
+// Replace lines 198-207 in chat.html with this:
 socket.on("receiveMessage", (data) => {
-    if (data.senderId !== receiverId && data.senderId !== myId) return;
+    console.log("New message received:", data);
 
-    // ... your existing renderMessage() call ...
-    
-    // TRIGGER THE NOTIFICATION
-    // If it's from the other person (not me), show the alert
-    if (data.senderId === receiverId) {
+    // 1. TRIGGER THE NOTIFICATION
+    // We show it if the user is on another tab (document.hidden)
+    if (document.hidden && data.senderId !== myId) {
         showNotification("Travel Companion", data.message);
     }
+    
+    // 2. RENDER THE BUBBLE
+    // Only show the message on screen if it's part of the current conversation
+    if (data.senderId === receiverId || data.senderId === myId) {
+        renderMessage(data.senderId, data.message, data.time);
+    }
 });
-
 socket.on("updateTickToSeen", ({ messageId }) => {
     const tick = document.getElementById(`status-${messageId}`);
     if (tick) {
