@@ -43,7 +43,9 @@ io.on("connection", (socket) => {
 
   socket.on("sendMessage", ({ senderId, receiverId, message, messageId }) => {
 
-  const time = new Date().toISOString();
+  const time = new Date().toLocaleString("en-IN", {
+  timeZone: "Asia/Kolkata"
+});
 
   const payload = {
     senderId,
@@ -55,6 +57,11 @@ io.on("connection", (socket) => {
 
   io.to(`user_${receiverId}`).emit("receiveMessage", payload);
   io.to(`user_${senderId}`).emit("receiveMessage", payload);
+
+  // ✅ SEEN STATUS
+socket.on("seenMessage", ({ senderId, receiverId, messageId }) => {
+  io.to(`user_${senderId}`).emit("messageSeen", { messageId });
+});
 
 });
 
@@ -82,7 +89,9 @@ io.on("connection", (socket) => {
   // GROUP MESSAGE
   socket.on("sendFlightMessage", ({ senderId, flightNumber, message, messageId }) => {
 
-  const time = new Date().toISOString();
+  const time = new Date().toLocaleString("en-IN", {
+  timeZone: "Asia/Kolkata"
+});
 
   io.to(`flight_${flightNumber}`).emit("receiveFlightMessage", {
     senderId,
@@ -124,6 +133,14 @@ io.on("connection", (socket) => {
 
   });
 
+});
+
+socket.on("typing", ({ senderId, receiverId }) => {
+  io.to(`user_${receiverId}`).emit("typing", { senderId });
+});
+
+socket.on("stopTyping", ({ senderId, receiverId }) => {
+  io.to(`user_${receiverId}`).emit("stopTyping", { senderId });
 });
 
 const PORT = process.env.PORT || 5000;

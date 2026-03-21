@@ -22,6 +22,8 @@
 <input id="msg" placeholder="Type message">
 <button id="sendBtn">Send</button>
 
+<div id="typing" style="font-size:12px;color:gray;"></div>
+
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
 <script>
@@ -102,6 +104,43 @@ socket.on("receiveMessage", (data) => {
     if (tick) tick.innerText = "✓✓";
   }
 
+  // 🔵 SEEN (when receiver gets message)
+if (data.senderId !== myId) {
+  socket.emit("seenMessage", {
+    senderId: data.senderId,
+    receiverId: myId,
+    messageId: data.messageId
+  });
+}
+
+});
+
+socket.on("messageSeen", ({ messageId }) => {
+  const tick = document.getElementById(`status-${messageId}`);
+  if (tick) tick.innerText = "✓✓"; // later we make blue
+});
+
+let typingTimeout;
+
+msgInput.addEventListener("input", () => {
+  socket.emit("typing", { senderId: myId, receiverId });
+
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    socket.emit("stopTyping", { senderId: myId, receiverId });
+  }, 1000);
+});
+
+socket.on("typing", ({ senderId }) => {
+  if (senderId === receiverId) {
+    document.getElementById("typing").innerText = "Typing...";
+  }
+});
+
+socket.on("stopTyping", ({ senderId }) => {
+  if (senderId === receiverId) {
+    document.getElementById("typing").innerText = "";
+  }
 });
 
 
@@ -122,9 +161,25 @@ async function loadMessages() {
       return;
     }
 
-    data.forEach(msg => {
-      renderMessage(msg.sender_id, msg.message);
-    });
+    data
+  .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // ✅ ORDER
+  .forEach(msg => {
+
+    const formattedTime = msg.created_at
+  ? new Date(msg.created_at).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  : "";
+
+    renderMessage(
+      msg.sender_id,
+      msg.message,
+      msg.id,
+      formattedTime
+    );
+
+  });
 
   } catch (err) {
     console.error(err);
