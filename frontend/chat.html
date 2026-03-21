@@ -155,19 +155,38 @@ async function loadMessages() {
   try {
     const res = await fetch(`${BASE_URL}/flights/messages/${myId}/${receiverId}`);
     const data = await res.json();
+    
     chatBox.innerHTML = "";
     if (!Array.isArray(data)) return;
-    
-    // Ensure chronological order
-    data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+    // STEP 1: FIX ORDERING (Smallest ID/Oldest Time first)
+    data.sort((a, b) => a.id - b.id); 
+
     data.forEach(msg => {
-      // Assuming old messages are already "seen" if loaded from DB
-      renderMessage(msg.sender_id, msg.message, msg.id, msg.created_at, "✓✓");
-      const tick = document.getElementById(`status-${msg.id}`);
-      if(tick) tick.classList.add("seen");
+      // Determine tick color based on DB status
+      const tickStatus = msg.status === 'seen' ? "✓✓" : "✓✓";
+      const isBlue = msg.status === 'seen' ? "color: #34b7f1;" : "color: gray;";
+
+      renderMessage(msg.sender_id, msg.message, msg.id, msg.created_at, tickStatus);
+      
+      // Apply the blue color if it was already seen in DB
+      const tickElement = document.getElementById(`status-${msg.id}`);
+      if (tickElement && msg.status === 'seen') {
+          tickElement.style.color = "#34b7f1";
+      }
     });
-  } catch (err) { console.error(err); }
+  } catch (err) {
+    console.error("Load error:", err);
+  }
 }
+
+// Add this listener to catch real-time "seen" updates
+socket.on("updateTickToSeen", ({ messageId }) => {
+    const tick = document.getElementById(`status-${messageId}`);
+    if (tick) {
+        tick.style.color = "#34b7f1"; // Turn it Blue immediately
+    }
+});
 
 document.getElementById("sendBtn").onclick = sendMessage;
 msgInput.addEventListener("keypress", (e) => { if (e.key === "Enter") sendMessage(); });
