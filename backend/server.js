@@ -43,7 +43,7 @@ io.on("connection", (socket) => {
 
   socket.on("sendMessage", ({ senderId, receiverId, message, messageId }) => {
 
-  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const time = new Date().toISOString();
 
   const payload = {
     senderId,
@@ -82,7 +82,7 @@ io.on("connection", (socket) => {
   // GROUP MESSAGE
   socket.on("sendFlightMessage", ({ senderId, flightNumber, message, messageId }) => {
 
-  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const time = new Date().toISOString();
 
   io.to(`flight_${flightNumber}`).emit("receiveFlightMessage", {
     senderId,
