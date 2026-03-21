@@ -114,14 +114,17 @@ document.getElementById("title").innerText =
 // ==============================
 // RENDER MESSAGE
 // ==============================
-function renderMessage(senderId, message){
+function renderMessage(senderId, message, messageId){
 
   const div = document.createElement("div");
 
   const isMe = senderId === myId;
 
   div.className = `msg ${isMe ? "me" : "them"}`;
-  div.innerText = message;
+  div.innerHTML = `
+  ${message}
+  ${senderId === myId ? `<span id="status-${messageId}" style="font-size:10px;margin-left:5px;color:gray;">✓</span>` : ""}
+`;
 
   chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
@@ -135,7 +138,13 @@ socket.on("receiveFlightMessage", (data) => {
 
   if (data.flightNumber !== flightNumber) return;
 
-  renderMessage(data.senderId, data.message);
+  // ✅ UPDATE STATUS (IMPORTANT)
+  if (data.senderId === myId) {
+    const el = document.getElementById(`status-${data.messageId}`);
+    if (el) el.innerText = "✓✓";
+  }
+
+  renderMessage(data.senderId, data.message, data.messageId);
 
 });
 
@@ -145,16 +154,22 @@ socket.on("receiveFlightMessage", (data) => {
 // ==============================
 function sendMessage(){
 
-  const message = msgInput.value.trim();
-  if (!message) return;
+  const messageId = Date.now();
 
-  socket.emit("sendFlightMessage", {
-    senderId: myId,
-    flightNumber,
-    message
-  });
+const message = msgInput.value.trim();
+if (!message) return;
 
-  msgInput.value = "";
+// ✅ 1. SHOW MESSAGE INSTANTLY (ADD THIS LINE)
+renderMessage(myId, message, messageId);
+
+// ✅ 2. SEND messageId ALSO (IMPORTANT)
+socket.emit("sendFlightMessage", {
+  senderId: myId,
+  flightNumber,
+  message,
+  messageId
+});
+
 }
 
 document.getElementById("sendBtn").onclick = sendMessage;
