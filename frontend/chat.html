@@ -2,246 +2,177 @@
 <html>
 <head>
   <title>Chat</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 20px; background: #f4f4f9; }
+    h2 { margin-top: 0; }
+    #chatBox { border:1px solid #ccc; height:300px; overflow-y:auto; padding:10px; display:flex; flex-direction:column; background: white; border-radius: 8px; }
+    #typingIndicator { font-size: 12px; color: #888; height: 15px; margin-bottom: 5px; font-style: italic; }
+    .input-area { display: flex; margin-top: 10px; gap: 10px; }
+    #msg { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
+    #sendBtn { padding: 10px 20px; border: none; background: #007bff; color: white; border-radius: 6px; cursor: pointer; }
+    .tick { margin-left:5px; font-weight: bold; }
+    .seen { color: #34b7f1; /* WhatsApp blue */ } 
+  </style>
 </head>
-
 <body>
 
-<h2>💬 Chat</h2>
+<h2>💬 Private Chat</h2>
+<div id="typingIndicator"></div>
+<div id="chatBox"></div>
 
-<div id="chatBox" style="
-  border:1px solid #ccc;
-  height:300px;
-  overflow:auto;
-  padding:10px;
-  display:flex;
-  flex-direction:column;
-"></div>
-
-<br>
-
-<input id="msg" placeholder="Type message">
-<button id="sendBtn">Send</button>
-
-<div id="typing" style="font-size:12px;color:gray;"></div>
+<div class="input-area">
+  <input id="msg" placeholder="Type a message..." autocomplete="off">
+  <button id="sendBtn">Send</button>
+</div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
 <script>
-
 const BASE_URL = "https://travel-companion-y8fn.onrender.com/api";
 const socket = io("https://travel-companion-y8fn.onrender.com");
 
 const chatBox = document.getElementById("chatBox");
 const msgInput = document.getElementById("msg");
+const typingIndicator = document.getElementById("typingIndicator");
 
 const myId = Number(localStorage.getItem("userId"));
 const receiverId = Number(localStorage.getItem("chatUserId"));
 
-// 🚫 safety check
 if (!myId || !receiverId) {
   alert("Chat error. Please reconnect.");
+  window.location.href = "connections.html";
 }
 
-// 🔥 JOIN ROOM
+// JOIN ROOM
 socket.emit("join", myId);
 
-
 // ==============================
-// 🎯 SINGLE RENDER FUNCTION
+// RENDER MESSAGE
 // ==============================
-function renderMessage(sender_id, message, messageId, time) {
+function renderMessage(sender_id, message, messageId, time, status = "✓") {
+  // Prevent duplicates if messageId already exists in DOM
+  if (document.getElementById(`msg-${messageId}`)) return;
 
   const div = document.createElement("div");
   const isMe = Number(sender_id) === myId;
+  div.id = `msg-${messageId}`;
 
-  div.style.background = isMe ? "#d1e7ff" : "#eee";
-  div.style.margin = "5px";
-  div.style.padding = "8px";
-  div.style.borderRadius = "6px";
+  div.style.background = isMe ? "#dcf8c6" : "#fff"; // WhatsApp colors
+  div.style.border = "1px solid #eee";
+  div.style.margin = "5px 0";
+  div.style.padding = "8px 12px";
+  div.style.borderRadius = "8px";
   div.style.maxWidth = "70%";
   div.style.alignSelf = isMe ? "flex-end" : "flex-start";
+  div.style.boxShadow = "0 1px 1px rgba(0,0,0,0.1)";
+
+  const formattedTime = time ? new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
 
   div.innerHTML = `
-    <div>${message}</div>
-    <div style="font-size:10px;color:gray;display:flex;justify-content:flex-end;">
-      ${time || ""}
-      ${isMe ? `<span id="status-${messageId}" style="margin-left:5px;">✓</span>` : ""}
+    <div style="word-wrap: break-word;">${message}</div>
+    <div style="font-size:10px; color:gray; display:flex; justify-content:flex-end; margin-top:4px;">
+      ${formattedTime}
+      ${isMe ? `<span id="status-${messageId}" class="tick">${status}</span>` : ""}
     </div>
   `;
 
   chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
+
+  // If I receive a message, tell the sender I saw it
+  if (!isMe && messageId) {
+    socket.emit("messageSeen", { senderId: receiverId, receiverId: myId, messageId });
+  }
 }
 
-
 // ==============================
-// 📥 RECEIVE LIVE MESSAGE
+// SOCKET EVENTS
 // ==============================
 socket.on("receiveMessage", (data) => {
-
   if (data.senderId !== receiverId && data.senderId !== myId) return;
+  renderMessage(data.senderId, data.message, data.messageId, data.time, "✓✓");
+});
 
-  const formattedTime = data.time
-  ? new Date(data.time).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  : new Date().toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+socket.on("messageSent", (data) => {
+  // Update tick to double tick when server confirms
+  renderMessage(data.senderId, data.message, data.messageId, data.time, "✓✓");
+});
 
-  renderMessage(
-    data.senderId,
-    data.message,
-    data.messageId,
-    formattedTime
-  );
-
-  // ✅ DOUBLE TICK FIX
-  if (data.senderId === myId) {
-    const tick = document.getElementById(`status-${data.messageId}`);
-    if (tick) tick.innerText = "✓✓";
+socket.on("messageSeen", (data) => {
+  const tick = document.getElementById(`status-${data.messageId}`);
+  if (tick) {
+    tick.innerText = "✓✓";
+    tick.classList.add("seen"); // Turns blue
   }
-
-  // 🔵 SEEN (when receiver gets message)
-if (data.senderId !== myId) {
-  socket.emit("seenMessage", {
-    senderId: data.senderId,
-    receiverId: myId,
-    messageId: data.messageId
-  });
-}
-
 });
 
-socket.on("messageSeen", ({ messageId }) => {
-  const tick = document.getElementById(`status-${messageId}`);
-  if (tick) tick.innerText = "✓✓"; // later we make blue
-});
-
-let typingTimeout;
-
+// ==============================
+// TYPING INDICATOR LOGIC
+// ==============================
+let typingTimer;
 msgInput.addEventListener("input", () => {
   socket.emit("typing", { senderId: myId, receiverId });
-
-  clearTimeout(typingTimeout);
-  typingTimeout = setTimeout(() => {
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => {
     socket.emit("stopTyping", { senderId: myId, receiverId });
-  }, 1000);
+  }, 1500);
 });
 
-socket.on("typing", ({ senderId }) => {
-  if (senderId === receiverId) {
-    document.getElementById("typing").innerText = "Typing...";
-  }
+socket.on("typing", (data) => {
+  if (data.senderId === receiverId) typingIndicator.innerText = "Typing...";
 });
 
-socket.on("stopTyping", ({ senderId }) => {
-  if (senderId === receiverId) {
-    document.getElementById("typing").innerText = "";
-  }
+socket.on("stopTyping", (data) => {
+  if (data.senderId === receiverId) typingIndicator.innerText = "";
 });
 
-
 // ==============================
-// 📦 LOAD OLD MESSAGES
-// ==============================
-async function loadMessages() {
-
-  try {
-
-    const res = await fetch(`${BASE_URL}/flights/messages/${myId}/${receiverId}`);
-    const data = await res.json();
-
-    chatBox.innerHTML = "";
-
-    if (!Array.isArray(data)) {
-      chatBox.innerHTML = "Error loading messages ❌";
-      return;
-    }
-
-    data
-  .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // ✅ ORDER
-  .forEach(msg => {
-
-    const formattedTime = msg.created_at
-  ? new Date(msg.created_at).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  : "";
-
-    renderMessage(
-      msg.sender_id,
-      msg.message,
-      msg.id,
-      formattedTime
-    );
-
-  });
-
-  } catch (err) {
-    console.error(err);
-    chatBox.innerHTML = "Server error ❌";
-  }
-}
-
-
-// ==============================
-// 📤 SEND MESSAGE
+// SEND & LOAD
 // ==============================
 async function sendMessage() {
-
   const message = msgInput.value.trim();
   if (!message) return;
 
   const messageId = Date.now();
+  const tempTime = new Date().toISOString();
 
-  // ❌ REMOVE instant render (prevents duplicate)
-  // renderMessage(myId, message);
+  // Optimistic render (1 tick)
+  renderMessage(myId, message, messageId, tempTime, "✓");
+  msgInput.value = ""; 
+  socket.emit("stopTyping", { senderId: myId, receiverId });
 
   try {
     await fetch(`${BASE_URL}/flights/message`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        senderId: myId,
-        receiverId,
-        message
-      })
+      body: JSON.stringify({ senderId: myId, receiverId, message })
     });
-  } catch (err) {
-    console.error("DB Save Error:", err);
-  }
+  } catch (err) { console.error("DB Save Error:", err); }
 
-  socket.emit("sendMessage", {
-    senderId: myId,
-    receiverId,
-    message,
-    messageId
-  });
-
-  msgInput.value = ""; // ✅ CLEAR INPUT
+  socket.emit("sendMessage", { senderId: myId, receiverId, message, messageId });
 }
 
+async function loadMessages() {
+  try {
+    const res = await fetch(`${BASE_URL}/flights/messages/${myId}/${receiverId}`);
+    const data = await res.json();
+    chatBox.innerHTML = "";
+    if (!Array.isArray(data)) return;
+    
+    // Ensure chronological order
+    data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    data.forEach(msg => {
+      // Assuming old messages are already "seen" if loaded from DB
+      renderMessage(msg.sender_id, msg.message, msg.id, msg.created_at, "✓✓");
+      const tick = document.getElementById(`status-${msg.id}`);
+      if(tick) tick.classList.add("seen");
+    });
+  } catch (err) { console.error(err); }
+}
 
-// ==============================
-// 🎯 BUTTON + ENTER KEY
-// ==============================
 document.getElementById("sendBtn").onclick = sendMessage;
+msgInput.addEventListener("keypress", (e) => { if (e.key === "Enter") sendMessage(); });
 
-msgInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") sendMessage();
-});
-
-
-// ==============================
-// 🚀 INIT
-// ==============================
 loadMessages();
-
 </script>
-
 </body>
 </html>
