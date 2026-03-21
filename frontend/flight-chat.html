@@ -138,29 +138,19 @@ socket.on("receiveFlightMessage", (data) => {
 
   if (data.flightNumber !== flightNumber) return;
 
-  // ✅ UPDATE STATUS (IMPORTANT)
-  if (data.senderId === myId) {
-    const el = document.getElementById(`status-${data.messageId}`);
-    if (el) el.innerText = "✓✓";
-  }
-
   renderMessage(data.senderId, data.message, data.messageId);
 
 });
-
 
 // ==============================
 // SEND MESSAGE
 // ==============================
 function sendMessage(){
 
-  const messageId = Date.now();
+const messageId = Date.now();
 
 const message = msgInput.value.trim();
 if (!message) return;
-
-// ✅ 1. SHOW MESSAGE INSTANTLY (ADD THIS LINE)
-renderMessage(myId, message, messageId);
 
 // ✅ 2. SEND messageId ALSO (IMPORTANT)
 socket.emit("sendFlightMessage", {
