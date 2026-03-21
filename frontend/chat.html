@@ -83,7 +83,15 @@ socket.on("receiveMessage", (data) => {
     data.senderId,
     data.message,
     data.messageId,
-    data.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    data.time
+  ? new Date(data.time).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  : new Date().toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   );
 
   // ✅ DOUBLE TICK FIX
