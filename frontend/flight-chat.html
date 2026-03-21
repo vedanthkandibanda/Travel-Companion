@@ -2,25 +2,89 @@
 <html>
 <head>
   <title>Flight Group Chat</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #0f172a;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    #title {
+      padding: 15px;
+      background: #1e293b;
+      text-align: center;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    #chatBox {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .msg {
+      padding: 10px 14px;
+      border-radius: 14px;
+      max-width: 65%;
+      font-size: 14px;
+    }
+
+    .me {
+      background: #2563eb;
+      align-self: flex-end;
+    }
+
+    .them {
+      background: #1e293b;
+      align-self: flex-start;
+    }
+
+    #inputBox {
+      display: flex;
+      padding: 10px;
+      background: #1e293b;
+    }
+
+    #msg {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+    }
+
+    button {
+      margin-left: 8px;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+
 </head>
 
 <body>
 
 <h2 id="title">✈️ Flight Chat</h2>
 
-<div id="chatBox" style="
-  border:1px solid #ccc;
-  height:300px;
-  overflow:auto;
-  padding:10px;
-  display:flex;
-  flex-direction:column;
-"></div>
+<div id="chatBox"></div>
 
-<br>
-
-<input id="msg" placeholder="Type message">
-<button id="sendBtn">Send</button>
+<div id="inputBox">
+  <input id="msg" placeholder="Type message">
+  <button id="sendBtn">Send</button>
+</div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
@@ -29,31 +93,26 @@
 const socket = io("https://travel-companion-y8fn.onrender.com");
 
 const myId = Number(localStorage.getItem("userId"));
-const flightNumber = String(localStorage.getItem("flightNumber"));
+const flightNumber = String(localStorage.getItem("flightNumber")).trim();
 
 const chatBox = document.getElementById("chatBox");
 const msgInput = document.getElementById("msg");
 
-// 🚫 safety
+// safety
 if (!flightNumber || !myId) {
   alert("Invalid access");
   window.location.href = "find-travelers.html";
 }
 
-// ==============================
-// ✈️ JOIN FLIGHT ROOM
-// ==============================
-socket.emit("joinFlight", {
-  flightNumber,
-  userId: myId
-});
+// ✅ FIXED JOIN (CRITICAL)
+socket.emit("joinFlight", flightNumber);
 
 document.getElementById("title").innerText =
   `✈️ Flight ${flightNumber} Chat`;
 
 
 // ==============================
-// 🧱 RENDER MESSAGE
+// RENDER MESSAGE
 // ==============================
 function renderMessage(senderId, message){
 
@@ -61,13 +120,8 @@ function renderMessage(senderId, message){
 
   const isMe = senderId === myId;
 
-  div.style.background = isMe ? "#d1e7ff" : "#eee";
-  div.style.margin = "5px";
-  div.style.padding = "8px";
-  div.style.borderRadius = "6px";
-  div.style.alignSelf = isMe ? "flex-end" : "flex-start";
-
-  div.innerHTML = `<b>${isMe ? "You" : "User " + senderId}:</b> ${message}`;
+  div.className = `msg ${isMe ? "me" : "them"}`;
+  div.innerText = message;
 
   chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
@@ -75,23 +129,25 @@ function renderMessage(senderId, message){
 
 
 // ==============================
-// 📥 RECEIVE MESSAGE
+// RECEIVE MESSAGE
 // ==============================
 socket.on("receiveFlightMessage", (data) => {
-  if (!data.flightNumber || data.flightNumber !== flightNumber) return;
+
+  if (data.flightNumber !== flightNumber) return;
+
   renderMessage(data.senderId, data.message);
+
 });
 
 
 // ==============================
-// 📤 SEND MESSAGE
+// SEND MESSAGE
 // ==============================
 function sendMessage(){
 
   const message = msgInput.value.trim();
   if (!message) return;
 
-  // instant UI
   renderMessage(myId, message);
 
   socket.emit("sendFlightMessage", {
@@ -107,11 +163,15 @@ document.getElementById("sendBtn").onclick = sendMessage;
 
 
 // ==============================
-// 👥 LIVE COUNT
+// LIVE COUNT
 // ==============================
 socket.on("flightCount", (data) => {
+
+  if (data.flightNumber !== flightNumber) return;
+
   document.getElementById("title").innerText =
     `✈️ Flight ${data.flightNumber} • 👥 ${data.count} online`;
+
 });
 
 </script>

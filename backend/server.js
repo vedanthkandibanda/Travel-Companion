@@ -11,7 +11,7 @@ const authRoutes = require("./routes/authRoutes");
 const app = express();
 const server = http.createServer(app);
 
-const flightRooms = {}; // 🔥 keep
+const flightRooms = {};
 
 app.use(cors({
   origin: "*",
@@ -20,17 +20,14 @@ app.use(cors({
 
 app.use(express.json());
 
-// ROUTES
 app.use("/api/auth", authRoutes);
 app.use("/api/flights", flightRoutes);
 app.use("/api/profile", profileRoutes);
 
-// TEST
 app.get("/", (req, res) => {
   res.send("Backend running 🚀");
 });
 
-// SOCKET
 const io = new Server(server, {
   cors: { origin: "*" }
 });
@@ -39,29 +36,22 @@ io.on("connection", (socket) => {
 
   console.log("User connected:", socket.id);
 
-  // =========================
-  // 👤 PRIVATE CHAT (FIXED)
-  // =========================
+  // PRIVATE CHAT
   socket.on("join", (userId) => {
-    socket.join(`user_${userId}`); // ✅ FIX
-    socket.userId = userId; // store for cleanup
+    socket.join(`user_${userId}`);
   });
 
-  socket.on("sendMessage", (data) => {
-
-    const { senderId, receiverId, message } = data;
-
-    io.to(`user_${receiverId}`).emit("receiveMessage", { // ✅ FIX
+  socket.on("sendMessage", ({ senderId, receiverId, message }) => {
+    io.to(`user_${receiverId}`).emit("receiveMessage", {
       senderId,
       message
     });
-
   });
 
-  // =========================
-  // ✈️ JOIN FLIGHT GROUP
-  // =========================
+  // GROUP JOIN (FIXED)
   socket.on("joinFlight", (flightNumber) => {
+
+    flightNumber = String(flightNumber).trim();
 
     if (!flightRooms[flightNumber]) {
       flightRooms[flightNumber] = new Set();
@@ -70,7 +60,7 @@ io.on("connection", (socket) => {
     flightRooms[flightNumber].add(socket.id);
 
     socket.join(`flight_${flightNumber}`);
-    socket.flightNumber = flightNumber; // store for cleanup
+    socket.flightNumber = flightNumber;
 
     io.to(`flight_${flightNumber}`).emit("flightCount", {
       flightNumber,
@@ -79,9 +69,20 @@ io.on("connection", (socket) => {
 
   });
 
-  // =========================
-  // 👥 GET GROUP COUNT
-  // =========================
+  // GROUP MESSAGE
+  socket.on("sendFlightMessage", ({ senderId, flightNumber, message }) => {
+
+    flightNumber = String(flightNumber).trim();
+
+    io.to(`flight_${flightNumber}`).emit("receiveFlightMessage", {
+      senderId,
+      message,
+      flightNumber
+    });
+
+  });
+
+  // COUNT CHECK
   socket.on("getFlightCount", (flightNumber) => {
 
     const count = flightRooms[flightNumber]
@@ -95,25 +96,8 @@ io.on("connection", (socket) => {
 
   });
 
-  // =========================
-  // 📢 GROUP MESSAGE (KEEP ONLY THIS)
-  // =========================
-  socket.on("sendFlightMessage", ({ senderId, flightNumber, message }) => {
-
-    io.to(`flight_${flightNumber}`).emit("receiveFlightMessage", {
-      senderId,
-      message,
-      flightNumber
-    });
-
-  });
-
-  // =========================
-  // ❗ CLEANUP ON DISCONNECT
-  // =========================
+  // CLEANUP
   socket.on("disconnect", () => {
-
-    console.log("User disconnected");
 
     const flight = socket.flightNumber;
 
@@ -127,10 +111,6 @@ io.on("connection", (socket) => {
     }
 
   });
-
-  socket.on("receiveFlightMessage", (data) => {
-  renderMessage(data.senderId, data.message);
-});
 
 });
 
