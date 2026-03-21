@@ -71,15 +71,16 @@ io.on("connection", (socket) => {
   });
 
   // GROUP MESSAGE
-  socket.on("sendFlightMessage", ({ senderId, flightNumber, message }) => {
+  socket.on("sendFlightMessage", ({ senderId, flightNumber, message, messageId }) => {
 
     flightNumber = String(flightNumber).trim();
 
     io.to(`flight_${flightNumber}`).emit("receiveFlightMessage", {
-      senderId,
-      message,
-      flightNumber
-    });
+  senderId,
+  message,
+  flightNumber,
+  messageId
+});
 
   });
 

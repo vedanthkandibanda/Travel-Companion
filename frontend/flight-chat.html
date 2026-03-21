@@ -117,14 +117,14 @@ document.getElementById("title").innerText =
 function renderMessage(senderId, message, messageId){
 
   const div = document.createElement("div");
-
   const isMe = senderId === myId;
 
   div.className = `msg ${isMe ? "me" : "them"}`;
+
   div.innerHTML = `
-  ${message}
-  ${senderId === myId ? `<span id="status-${messageId}" style="font-size:10px;margin-left:5px;color:gray;">✓</span>` : ""}
-`;
+    ${message}
+    ${isMe ? `<span id="status-${messageId}" style="font-size:10px;margin-left:5px;color:gray;">✓</span>` : ""}
+  `;
 
   chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
@@ -140,6 +140,12 @@ socket.on("receiveFlightMessage", (data) => {
 
   renderMessage(data.senderId, data.message, data.messageId);
 
+  // ✅ double tick update
+  if (data.senderId === myId) {
+    const tick = document.getElementById(`status-${data.messageId}`);
+    if (tick) tick.innerText = "✓✓";
+  }
+
 });
 
 // ==============================
@@ -147,19 +153,19 @@ socket.on("receiveFlightMessage", (data) => {
 // ==============================
 function sendMessage(){
 
-const messageId = Date.now();
+  const message = msgInput.value.trim();
+  if (!message) return;
 
-const message = msgInput.value.trim();
-if (!message) return;
+  const messageId = Date.now();
 
-// ✅ 2. SEND messageId ALSO (IMPORTANT)
-socket.emit("sendFlightMessage", {
-  senderId: myId,
-  flightNumber,
-  message,
-  messageId
-});
+  socket.emit("sendFlightMessage", {
+    senderId: myId,
+    flightNumber,
+    message,
+    messageId
+  });
 
+  msgInput.value = ""; // ✅ CLEAR INPUT
 }
 
 document.getElementById("sendBtn").onclick = sendMessage;

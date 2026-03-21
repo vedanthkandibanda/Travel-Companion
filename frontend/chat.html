@@ -72,7 +72,6 @@ function renderMessage(sender_id, message) {
 // ==============================
 socket.on("receiveMessage", (data) => {
 
-  // ❌ Ignore unrelated messages
   if (
     (data.senderId === myId && data.receiverId === receiverId) ||
     (data.senderId === receiverId && data.receiverId === myId)
@@ -119,10 +118,11 @@ async function sendMessage() {
   const message = msgInput.value.trim();
   if (!message) return;
 
-  // 🔥 INSTANT UI (no wait)
-  renderMessage(myId, message);
+  const messageId = Date.now();
 
-  // 1️⃣ Save to DB
+  // ❌ REMOVE instant render (prevents duplicate)
+  // renderMessage(myId, message);
+
   try {
     await fetch(`${BASE_URL}/flights/message`, {
       method: "POST",
@@ -137,14 +137,14 @@ async function sendMessage() {
     console.error("DB Save Error:", err);
   }
 
-  // 2️⃣ Socket emit
   socket.emit("sendMessage", {
     senderId: myId,
     receiverId,
-    message
+    message,
+    messageId
   });
 
-  msgInput.value = "";
+  msgInput.value = ""; // ✅ CLEAR INPUT
 }
 
 
