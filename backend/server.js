@@ -41,23 +41,22 @@ io.on("connection", (socket) => {
     socket.join(`user_${userId}`);
   });
 
-  socket.on("sendMessage", ({ senderId, receiverId, message }) => {
+  socket.on("sendMessage", ({ senderId, receiverId, message, messageId }) => {
 
-  // send to receiver
-  io.to(`user_${receiverId}`).emit("receiveMessage", {
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const payload = {
     senderId,
     receiverId,
-    message
-  });
+    message,
+    messageId,
+    time
+  };
 
-  // ✅ ALSO send back to sender (FIX)
-  io.to(`user_${senderId}`).emit("receiveMessage", {
-    senderId,
-    receiverId,
-    message
-  });
+  io.to(`user_${receiverId}`).emit("receiveMessage", payload);
+  io.to(`user_${senderId}`).emit("receiveMessage", payload);
 
-  });
+});
 
   // GROUP JOIN (FIXED)
   socket.on("joinFlight", (flightNumber) => {
@@ -83,16 +82,17 @@ io.on("connection", (socket) => {
   // GROUP MESSAGE
   socket.on("sendFlightMessage", ({ senderId, flightNumber, message, messageId }) => {
 
-    flightNumber = String(flightNumber).trim();
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    io.to(`flight_${flightNumber}`).emit("receiveFlightMessage", {
-  senderId,
-  message,
-  flightNumber,
-  messageId
-});
-
+  io.to(`flight_${flightNumber}`).emit("receiveFlightMessage", {
+    senderId,
+    message,
+    flightNumber,
+    messageId,
+    time
   });
+
+});
 
   // COUNT CHECK
   socket.on("getFlightCount", (flightNumber) => {

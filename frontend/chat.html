@@ -47,10 +47,9 @@ socket.emit("join", myId);
 // ==============================
 // 🎯 SINGLE RENDER FUNCTION
 // ==============================
-function renderMessage(sender_id, message) {
+function renderMessage(sender_id, message, messageId, time) {
 
   const div = document.createElement("div");
-
   const isMe = Number(sender_id) === myId;
 
   div.style.background = isMe ? "#d1e7ff" : "#eee";
@@ -60,7 +59,13 @@ function renderMessage(sender_id, message) {
   div.style.maxWidth = "70%";
   div.style.alignSelf = isMe ? "flex-end" : "flex-start";
 
-  div.innerHTML = `<b>${isMe ? "You" : "Them"}:</b> ${message}`;
+  div.innerHTML = `
+    <div>${message}</div>
+    <div style="font-size:10px;color:gray;display:flex;justify-content:flex-end;">
+      ${time || ""}
+      ${isMe ? `<span id="status-${messageId}" style="margin-left:5px;">✓</span>` : ""}
+    </div>
+  `;
 
   chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
@@ -72,10 +77,15 @@ function renderMessage(sender_id, message) {
 // ==============================
 socket.on("receiveMessage", (data) => {
 
-  // ✅ Only check if this chat belongs to current conversation
   if (data.senderId !== receiverId && data.senderId !== myId) return;
 
-  renderMessage(data.senderId, data.message);
+  renderMessage(data.senderId, data.message, data.messageId, data.time);
+
+  // ✅ double tick
+  if (data.senderId === myId) {
+    const tick = document.getElementById(`status-${data.messageId}`);
+    if (tick) tick.innerText = "✓✓";
+  }
 
 });
 
