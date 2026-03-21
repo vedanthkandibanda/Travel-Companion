@@ -79,9 +79,14 @@ socket.on("receiveMessage", (data) => {
 
   if (data.senderId !== receiverId && data.senderId !== myId) return;
 
-  renderMessage(data.senderId, data.message, data.messageId, data.time);
+  renderMessage(
+    data.senderId,
+    data.message,
+    data.messageId,
+    data.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  );
 
-  // ✅ double tick
+  // ✅ DOUBLE TICK FIX
   if (data.senderId === myId) {
     const tick = document.getElementById(`status-${data.messageId}`);
     if (tick) tick.innerText = "✓✓";

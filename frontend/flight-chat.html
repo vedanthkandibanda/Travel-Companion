@@ -141,7 +141,12 @@ socket.on("receiveFlightMessage", (data) => {
 
   if (data.flightNumber !== flightNumber) return;
 
-  renderMessage(data.senderId, data.message, data.messageId, data.time);
+  renderMessage(
+  data.senderId,
+  data.message,
+  data.messageId,
+  data.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+);
 
   if (data.senderId === myId) {
     const tick = document.getElementById(`status-${data.messageId}`);
