@@ -3,31 +3,40 @@
 <head>
   <title>Find Travelers</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; background: #f4f7f6; }
-    .card { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    input, select, button { padding: 10px; margin: 5px; border-radius: 5px; border: 1px solid #ccc; }
-    button { background: #2563eb; color: white; cursor: pointer; border: none; }
-    button:hover { background: #1d4ed8; }
-    #viewGroupBtn { background: #059669; } /* Green button for group */
+    body { font-family: sans-serif; padding: 20px; background: #f4f7f6; color: #1e293b; }
+    h2 { color: #2563eb; }
+    .card { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #2563eb; }
+    input, select, button { padding: 12px; margin: 5px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 14px; }
+    button { background: #2563eb; color: white; cursor: pointer; border: none; font-weight: 600; transition: 0.2s; }
+    button:hover { background: #1d4ed8; transform: translateY(-1px); }
+    #viewGroupBtn { background: #059669; } 
+    #viewGroupBtn:hover { background: #047857; }
+    #statusBadge { font-size: 12px; padding: 4px 8px; border-radius: 12px; margin-left: 10px; }
+    .online { background: #dcfce7; color: #166534; }
+    .offline { background: #fee2e2; color: #991b1b; }
   </style>
 </head>
 
 <body>
 
-<h2>Find Travelers On Your Flight</h2>
+<h2>✈️ Find Travelers <span id="statusBadge" class="offline">Connecting...</span></h2>
 
-<input type="text" id="flightNumber" placeholder="Enter Flight Number (e.g. AI101)">
+<div class="search-controls">
+  <input type="text" id="flightNumber" placeholder="Enter Flight Number (e.g. AI101)" autocomplete="off">
+  
+  <select id="filter">
+    <option value="all">All Matches</option>
+    <option value="high">🔥 High Match (60%+)</option>
+    <option value="medium">⭐ Medium Match (30%+)</option>
+  </select>
+  
+  <br>
+  
+  <button id="searchBtn">🔍 Search Travelers</button>
+  <button id="viewGroupBtn">👥 View Flight Group</button>
+</div>
 
-<select id="filter">
-  <option value="all">All Matches</option>
-  <option value="high">🔥 High Match (60%+)</option>
-  <option value="medium">⭐ Medium Match (30%+)</option>
-</select>
-
-<br>
-
-<button id="searchBtn">Search Travelers</button>
-<button id="viewGroupBtn">View Flight Group</button>
+<hr style="margin: 20px 0; border: 0; border-top: 1px solid #e2e8f0;">
 
 <div id="results"></div>
 
@@ -39,37 +48,57 @@ const socket = io("https://travel-companion-y8fn.onrender.com");
 
 const flightInput = document.getElementById("flightNumber");
 const resultsDiv = document.getElementById("results");
+const statusBadge = document.getElementById("statusBadge");
 
 // ==============================
-// 👥 CHECK GROUP (FIXED LOGIC)
+// 🚦 CONNECTION MONITOR
+// ==============================
+socket.on("connect", () => {
+  statusBadge.innerText = "Online";
+  statusBadge.className = "online";
+});
+
+socket.on("disconnect", () => {
+  statusBadge.innerText = "Offline";
+  statusBadge.className = "offline";
+});
+
+
+// ==============================
+// 👥 CHECK GROUP LOGIC (FIXED)
 // ==============================
 async function checkGroup() {
   const flight = flightInput.value.trim().toUpperCase();
 
   if (!flight) {
-    alert("Please enter a flight number first.");
+    alert("Please enter a flight number first (e.g., AI101).");
     return;
   }
 
-  // Show visual feedback
-  const originalText = document.getElementById("viewGroupBtn").innerText;
-  document.getElementById("viewGroupBtn").innerText = "Checking...";
+  if (!socket.connected) {
+    alert("Still connecting to real-time server. Please wait a second.");
+    return;
+  }
 
-  // 1. Ask server for count
+  const btn = document.getElementById("viewGroupBtn");
+  const originalText = btn.innerText;
+  btn.innerText = "Checking...";
+  btn.disabled = true;
+
+  // 1. Request stats from server
   socket.emit("getFlightCount", flight);
 
-  // 2. Listen for the specific response
+  // 2. Listen for response
   socket.once("flightCount", (data) => {
-    document.getElementById("viewGroupBtn").innerText = originalText;
+    btn.innerText = originalText;
+    btn.disabled = false;
 
-    // Convert both to string/trim to ensure match
-    if (String(data.flightNumber).trim().toUpperCase() !== flight) {
-      console.log("Mismatched flight count received");
-      return;
-    }
+    // Safety check to ensure we are talking about the same flight
+    if (String(data.flightNumber).toUpperCase() !== flight) return;
 
+    const count = data.count || 0;
     const join = confirm(
-      `✈️ Flight ${flight}\n👥 ${data.count || 0} people are online in this group.\n\nDo you want to join the group chat?`
+      `✈️ Flight: ${flight}\n👥 Users Online: ${count}\n\nWould you like to enter the live flight group chat?`
     );
 
     if (join) {
@@ -79,28 +108,31 @@ async function checkGroup() {
   });
 }
 
-// Attach listener to the button
 document.getElementById("viewGroupBtn").onclick = checkGroup;
 
 
 // ==============================
-// 🔍 FIND TRAVELERS
+// 🔍 SEARCH TRAVELERS
 // ==============================
 document.getElementById("searchBtn").onclick = async function findTravelers() {
   const flight = flightInput.value.trim().toUpperCase();
   const userId = localStorage.getItem("userId");
 
-  if (!flight) { alert("Enter flight number"); return; }
-  if (!userId) { alert("Login first"); window.location.href = "login.html"; return; }
+  if (!flight) { alert("Please enter a flight number."); return; }
+  if (!userId) { 
+    alert("Session expired. Please login again."); 
+    window.location.href = "login.html"; 
+    return; 
+  }
 
-  resultsDiv.innerHTML = "Searching for travelers... 🔍";
+  resultsDiv.innerHTML = "<p>Searching for travelers on your flight... 🔍</p>";
 
   try {
     const res = await fetch(`${BASE_URL}/flights/matches/${flight}/${userId}`);
     const data = await res.json();
 
     if (!Array.isArray(data)) {
-      resultsDiv.innerHTML = "No travelers found or server error.";
+      resultsDiv.innerHTML = "<p>No travelers found for this flight yet. 😕</p>";
       return;
     }
 
@@ -113,7 +145,7 @@ document.getElementById("searchBtn").onclick = async function findTravelers() {
     resultsDiv.innerHTML = "";
 
     if (filtered.length === 0) {
-      resultsDiv.innerHTML = "No matching travelers found on this flight. 😕";
+      resultsDiv.innerHTML = "<p>No matches found with current filter. 😕</p>";
       return;
     }
 
@@ -121,16 +153,20 @@ document.getElementById("searchBtn").onclick = async function findTravelers() {
       const div = document.createElement("div");
       div.className = "card";
       div.innerHTML = `
-        <h3>${user.name}</h3>
-        <p>Match Score: <strong>${user.score}%</strong></p>
-        <button onclick="connectUser(${user.id})">Send Connection Request</button>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h3 style="margin:0;">${user.name}</h3>
+            <p style="margin:5px 0 0; color:#64748b;">Compatibility: <strong>${user.score}%</strong></p>
+          </div>
+          <button onclick="connectUser(${user.id})" style="background:#f1f5f9; color:#2563eb; border:1px solid #2563eb;">Connect</button>
+        </div>
       `;
       resultsDiv.appendChild(div);
     });
 
   } catch (err) {
-    console.error(err);
-    resultsDiv.innerHTML = "Failed to connect to server. ❌";
+    console.error("Search Error:", err);
+    resultsDiv.innerHTML = "<p style='color:red;'>Server is currently unavailable. Please try again in a moment. ❌</p>";
   }
 };
 
@@ -148,9 +184,9 @@ window.connectUser = async (receiverId) => {
       body: JSON.stringify({ senderId, receiverId })
     });
     const data = await res.json();
-    alert(data.message || "Request sent!");
+    alert(data.message || "Connection request sent!");
   } catch (err) {
-    alert("Error sending request.");
+    alert("Connection request failed. Please check your internet.");
   }
 };
 

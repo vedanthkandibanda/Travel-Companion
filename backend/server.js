@@ -11,6 +11,7 @@ const authRoutes = require("./routes/authRoutes");
 const app = express();
 const server = http.createServer(app);
 
+// In-memory store for flight group occupancy
 const flightRooms = {};
 
 app.use(cors({
@@ -36,7 +37,7 @@ io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
   // ==============================
-  // PRIVATE CHAT
+  // 1. PRIVATE CHAT LOGIC
   // ==============================
   socket.on("join", (userId) => {
     socket.join(`user_${userId}`);
@@ -52,7 +53,7 @@ io.on("connection", (socket) => {
     io.to(`user_${senderId}`).emit("messageSent", payload);
   });
 
-  // WhatsApp-like Features: Typing & Seen
+  // Typing & Seen Features
   socket.on("typing", ({ senderId, receiverId }) => {
     io.to(`user_${receiverId}`).emit("typing", { senderId });
   });
@@ -65,54 +66,81 @@ io.on("connection", (socket) => {
     io.to(`user_${senderId}`).emit("messageSeen", { messageId });
   });
 
+
   // ==============================
-  // GROUP CHAT (FLIGHT)
+  // 2. GROUP CHAT (FLIGHT) LOGIC
   // ==============================
+  
+  // FIX: This handler allows the "View Flight Group" button to see stats before joining
+  socket.on("getFlightCount", (flightNumber) => {
+    const cleanedFlight = String(flightNumber).trim().toUpperCase();
+    const count = flightRooms[cleanedFlight] ? flightRooms[cleanedFlight].size : 0;
+    
+    socket.emit("flightCount", {
+      flightNumber: cleanedFlight,
+      count: count
+    });
+  });
+
   socket.on("joinFlight", (flightNumber) => {
-    flightNumber = String(flightNumber).trim();
+    const cleanedFlight = String(flightNumber).trim().toUpperCase();
 
-    if (!flightRooms[flightNumber]) {
-      flightRooms[flightNumber] = new Set();
+    if (!flightRooms[cleanedFlight]) {
+      flightRooms[cleanedFlight] = new Set();
     }
-    flightRooms[flightNumber].add(socket.id);
+    flightRooms[cleanedFlight].add(socket.id);
 
-    socket.join(`flight_${flightNumber}`);
-    socket.flightNumber = flightNumber;
+    socket.join(`flight_${cleanedFlight}`);
+    socket.flightNumber = cleanedFlight;
 
-    io.to(`flight_${flightNumber}`).emit("flightCount", {
-      flightNumber,
-      count: flightRooms[flightNumber].size
+    // Notify the room of the new count
+    io.to(`flight_${cleanedFlight}`).emit("flightCount", {
+      flightNumber: cleanedFlight,
+      count: flightRooms[cleanedFlight].size
     });
   });
 
   socket.on("sendFlightMessage", ({ senderId, flightNumber, message, messageId }) => {
+    const cleanedFlight = String(flightNumber).trim().toUpperCase();
     const time = new Date().toISOString();
-    io.to(`flight_${flightNumber}`).emit("receiveFlightMessage", {
-      senderId, message, flightNumber, messageId, time
+    
+    io.to(`flight_${cleanedFlight}`).emit("receiveFlightMessage", {
+      senderId, message, flightNumber: cleanedFlight, messageId, time
     });
   });
 
   // Group Typing
   socket.on("flightTyping", ({ flightNumber, userName }) => {
-    socket.to(`flight_${flightNumber}`).emit("flightTyping", { userName });
+    const cleanedFlight = String(flightNumber).trim().toUpperCase();
+    socket.to(`flight_${cleanedFlight}`).emit("flightTyping", { userName });
   });
 
   socket.on("flightStopTyping", ({ flightNumber }) => {
-    socket.to(`flight_${flightNumber}`).emit("flightStopTyping");
+    const cleanedFlight = String(flightNumber).trim().toUpperCase();
+    socket.to(`flight_${cleanedFlight}`).emit("flightStopTyping");
   });
 
+
   // ==============================
-  // CLEANUP
+  // 3. CLEANUP & DISCONNECT
   // ==============================
   socket.on("disconnect", () => {
     const flight = socket.flightNumber;
     if (flight && flightRooms[flight]) {
       flightRooms[flight].delete(socket.id);
+      
+      // Update remaining users about the new count
       io.to(`flight_${flight}`).emit("flightCount", {
         flightNumber: flight,
         count: flightRooms[flight].size
       });
+
+      // Optional: Remove empty sets to save memory
+      if (flightRooms[flight].size === 0) {
+        delete flightRooms[flight];
+      }
     }
+    console.log("User disconnected:", socket.id);
   });
 });
 
