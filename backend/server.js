@@ -63,6 +63,14 @@ socket.on("seenMessage", ({ senderId, receiverId, messageId }) => {
   io.to(`user_${senderId}`).emit("messageSeen", { messageId });
 });
 
+socket.on("typing", ({ senderId, receiverId }) => {
+  io.to(`user_${receiverId}`).emit("typing", { senderId });
+});
+
+socket.on("stopTyping", ({ senderId, receiverId }) => {
+  io.to(`user_${receiverId}`).emit("stopTyping", { senderId });
+});
+
 });
 
   // GROUP JOIN (FIXED)
@@ -135,13 +143,6 @@ socket.on("seenMessage", ({ senderId, receiverId, messageId }) => {
 
 });
 
-socket.on("typing", ({ senderId, receiverId }) => {
-  io.to(`user_${receiverId}`).emit("typing", { senderId });
-});
-
-socket.on("stopTyping", ({ senderId, receiverId }) => {
-  io.to(`user_${receiverId}`).emit("stopTyping", { senderId });
-});
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server running on ${PORT}`));
