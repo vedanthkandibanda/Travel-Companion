@@ -79,11 +79,7 @@ socket.on("receiveMessage", (data) => {
 
   if (data.senderId !== receiverId && data.senderId !== myId) return;
 
-  renderMessage(
-    data.senderId,
-    data.message,
-    data.messageId,
-    data.time
+  const formattedTime = data.time
   ? new Date(data.time).toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit'
@@ -91,7 +87,13 @@ socket.on("receiveMessage", (data) => {
   : new Date().toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit'
-    })
+    });
+
+  renderMessage(
+    data.senderId,
+    data.message,
+    data.messageId,
+    formattedTime
   );
 
   // ✅ DOUBLE TICK FIX
