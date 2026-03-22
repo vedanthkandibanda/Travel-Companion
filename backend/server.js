@@ -14,10 +14,23 @@ const server = http.createServer(app);
 // In-memory store for flight group occupancy
 const flightRooms = {};
 
+// Add/Update this in server.js
 app.use(cors({
-  origin: "*",
+  origin: ["https://travel-companion-blush.vercel.app", "http://127.0.0.1:5500"],
   methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
 }));
+
+// Keeping ONLY this one block
+const io = new Server(server, {
+  cors: {
+    origin: ["https://travel-companion-blush.vercel.app", "http://127.0.0.1:5500"],
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
+
+// Delete any other "const io = new Server" lines below this!
 
 app.use(express.json());
 
@@ -29,9 +42,6 @@ app.get("/", (req, res) => {
   res.send("Backend running 🚀");
 });
 
-const io = new Server(server, {
-  cors: { origin: "*" }
-});
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
@@ -65,21 +75,6 @@ io.on("connection", (socket) => {
   socket.on("messageSeen", ({ senderId, receiverId, messageId }) => {
     io.to(`user_${senderId}`).emit("messageSeen", { messageId });
   });
-
-  socket.on("messageSeen", async ({ messageId, senderId }) => {
-    try {
-        // 1. Update Database (You'll need to export your DB connection to use here)
-        // db.query("UPDATE messages SET status = 'seen' WHERE id = ?", [messageId]);
-
-        // 2. Tell the original sender to turn the ticks BLUE
-        io.to(`user_${senderId}`).emit("updateTickToSeen", { messageId });
-        
-        console.log(`Message ${messageId} marked as seen`);
-    } catch (err) {
-        console.error("Error updating seen status:", err);
-    }
-});
-
 
   // ==============================
   // 2. GROUP CHAT (FLIGHT) LOGIC
