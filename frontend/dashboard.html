@@ -3,51 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | Travel Companion</title>
+    <title>VoyaMate | Dashboard</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-    <div class="dashboard-layout">
-        <nav class="sidebar">
-            <div class="logo">Voyage.</div>
-            
-            <a href="find-travelers.html" class="nav-item"><span>🔍</span> Find Travelers</a>
-            <a href="connections.html" class="nav-item"><span>🤝</span> My Connections</a>
-            <a href="add-flight.html" class="nav-item"><span>✈️</span> Add Flight</a>
-            <a href="profile.html" class="nav-item"><span>👤</span> Create Profile</a>
-            
-            <div style="margin-top: auto;">
-                <button onclick="logout()" style="background: #fee2e2; color: #ef4444; border:none; width:100%; padding:12px; border-radius:12px; font-weight:600; cursor:pointer;">
-                    Logout
-                </button>
-            </div>
-        </nav>
+    <nav class="voyamate-sidebar">
+        <div class="brand-v">VOYAMATE</div>
 
-        <main class="main-stage">
-            <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;">
-                <div>
-                    <h2 style="font-size: 2rem; letter-spacing: -0.04em;">Welcome Back</h2>
-                    <p style="color: var(--text-muted);">Explore your traveler companion dashboard</p>
-                </div>
-                
-                <div class="notif-badge">
-                    <span class="pulse-dot"></span>
-                    Notifications: <span id="notifCount">0</span>
-                </div>
-            </header>
+        <a href="find-travelers.html" class="nav-link">Find Travelers</a>
+        <a href="connections.html" class="nav-link">My Connections</a>
+        <a href="add-flight.html" class="nav-link">Add Flight</a>
+        <a href="profile.html" class="nav-link">Create Profile</a>
 
-            <div style="background: white; padding: 40px; border-radius: 24px; border: 1px solid var(--border); box-shadow: var(--shadow);">
-                <h3 style="margin-bottom: 1rem;">Ready for your next trip?</h3>
-                <p style="color: var(--text-muted); line-height: 1.6;">Use the menu on the left to find companions or manage your flights. Your journey starts here.</p>
-            </div>
-        </main>
-    </div>
+        <div class="pulse-container">
+            <p style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-ghost);">Alerts</p>
+            <h3 style="margin-top: 5px;">🔔 <span id="notifCount">0</span></h3>
+        </div>
+
+        <button onclick="logout()" style="margin-top: auto; background: none; border: 1px solid #ff4757; color: #ff4757; padding: 12px; border-radius: 14px; cursor: pointer; transition: 0.3s;">
+            Logout System
+        </button>
+    </nav>
+
+    <main style="margin-left: 280px; padding: 4rem; width: 100%;">
+        <h2 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -1px;">Dashboard</h2>
+        <p style="color: var(--text-ghost); margin-top: 0.5rem;">Welcome to Travel Companion</p>
+        
+        <div style="margin-top: 3rem; height: 1px; background: var(--border); width: 100%;"></div>
+    </main>
 
     <script type="module">
         import BASE_URL from "./js/config.js";
 
-        // Keeps your same logic
         function logout(){
             localStorage.clear();
             window.location.href = "login.html";
@@ -56,19 +44,17 @@
         async function loadNotifications(){
             const userId = localStorage.getItem("userId");
             if (!userId) return;
-
             try {
                 const res = await fetch(`${BASE_URL}/flights/unread/${userId}`);
                 const data = await res.json();
                 document.getElementById("notifCount").innerText = data.count || 0;
             } catch (err) {
-                console.error("Notif Error:", err);
+                console.error("Error fetching notifications:", err);
             }
         }
 
         setInterval(loadNotifications, 5000);
         loadNotifications();
-
         window.logout = logout;
     </script>
 </body>
