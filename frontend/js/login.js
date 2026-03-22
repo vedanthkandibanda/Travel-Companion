@@ -19,18 +19,20 @@ form.addEventListener("submit", async (e) => {
 
     const data = await response.json();
 
-    console.log("LOGIN RESPONSE:", data);
-
-    if (data.user?.id) {
-      // ✅ store everything needed
-      localStorage.setItem("userId", data.user.id);
-      localStorage.setItem("token", data.token);
-
-      alert("Login successful 🚀");
-      window.location.href = "dashboard.html";
-    } else {
-      alert(data.message || "Login failed");
-    }
+    // Replace lines 24-31 with this:
+if (response.ok) {
+    console.log("LOGIN SUCCESS:", data);
+    
+    // Use the actual keys your backend sends (usually userId and token)
+    localStorage.setItem("userId", data.userId || data.user?._id || data.user?.id);
+    localStorage.setItem("token", data.token);
+    
+    alert("Login successful 🚀");
+    window.location.href = "dashboard.html"; 
+} else {
+    console.error("LOGIN FAILED:", data);
+    alert(data.message || "Login failed. Please check your credentials.");
+}
 
   } catch (err) {
     console.error(err);
