@@ -43,11 +43,15 @@ async function getProfile() {
       return;
     }
 
-    box.innerHTML = `
-      <p><b>ID:</b> ${data.user.id}</p>
-      <p><b>Name:</b> ${data.user.name}</p>
-      <p><b>Email:</b> ${data.user.email}</p>
-    `;
+    // Change the box.innerHTML line to this:
+box.innerHTML = `
+  <p><b>Name:</b> ${data.user.name}</p>
+  <p><b>Email:</b> ${data.user.email}</p>
+  <hr>
+  <p><b>Username:</b> ${data.user.username || 'Not set'}</p>
+  <p><b>Bio:</b> ${data.user.bio || 'No bio yet'}</p>
+  <p><b>Interests:</b> ${data.user.interests ? JSON.parse(data.user.interests).join(', ') : 'None'}</p>
+`;
 
   } catch (err) {
     console.error(err);

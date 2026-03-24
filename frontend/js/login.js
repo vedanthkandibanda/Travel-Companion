@@ -57,11 +57,17 @@ form.addEventListener("submit", async (e) => {
                 localStorage.setItem("token", data.token);
             }
             setTimeout(() => {
-              // Inside the successful login response:
-if (data.isFirstTime) {
-    window.location.href = "setup-profile.html"; 
-} else {
-    window.location.href = "dashboard.html";
+              // Inside your login.js submit handler:
+if (response.ok) {
+    localStorage.setItem("userId", data.user.id);
+    localStorage.setItem("token", data.token);
+    
+    // Check if user needs to set up their profile
+    if (data.user.profile_completed) {
+        window.location.href = "dashboard.html";
+    } else {
+        window.location.href = "setup-profile.html"; 
+    }
 }
                 window.location.href = name ? "login.html" : "dashboard.html";
             }, 1500);
