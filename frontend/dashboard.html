@@ -1,61 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoyaMate | Dashboard</title>
-    <link rel="stylesheet" href="css/style.css">
+<title>Dashboard</title>
 </head>
+
 <body>
 
-    <nav class="voyamate-sidebar">
-        <div class="brand-v">VOYAMATE</div>
+<h2>Dashboard</h2>
 
-        <a href="find-travelers.html" class="nav-link">Find Travelers</a>
-        <a href="connections.html" class="nav-link">My Connections</a>
-        <a href="add-flight.html" class="nav-link">Add Flight</a>
-        <a href="profile.html" class="nav-link">Create Profile</a>
+<p>Welcome to Travel Companion</p>
 
-        <div class="pulse-container">
-            <p style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-ghost);">Alerts</p>
-            <h3 style="margin-top: 5px;">🔔 <span id="notifCount">0</span></h3>
-        </div>
+<a href="find-travelers.html">Find Travelers</a><br><br>
+<a href="connections.html">My Connections</a><br><br>
+<a href="add-flight.html">Add Flight</a><br><br>
+<a href="profile.html">Create Profile</a><br><br>
 
-        <button onclick="logout()" style="margin-top: auto; background: none; border: 1px solid #ff4757; color: #ff4757; padding: 12px; border-radius: 14px; cursor: pointer; transition: 0.3s;">
-            Logout System
-        </button>
-    </nav>
+<h3>🔔 Notifications: <span id="notifCount">0</span></h3>
 
-    <main style="margin-left: 280px; padding: 4rem; width: 100%;">
-        <h2 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -1px;">Dashboard</h2>
-        <p style="color: var(--text-ghost); margin-top: 0.5rem;">Welcome to Travel Companion</p>
-        
-        <div style="margin-top: 3rem; height: 1px; background: var(--border); width: 100%;"></div>
-    </main>
+<button onclick="logout()">Logout</button>
 
-    <script type="module">
-        import BASE_URL from "./js/config.js";
+<script type="module">
+import BASE_URL from "./js/config.js";
 
-        function logout(){
-            localStorage.clear();
-            window.location.href = "login.html";
-        }
+function logout(){
+  localStorage.clear();
+  window.location.href = "login.html";
+}
 
-        async function loadNotifications(){
-            const userId = localStorage.getItem("userId");
-            if (!userId) return;
-            try {
-                const res = await fetch(`${BASE_URL}/flights/unread/${userId}`);
-                const data = await res.json();
-                document.getElementById("notifCount").innerText = data.count || 0;
-            } catch (err) {
-                console.error("Error fetching notifications:", err);
-            }
-        }
+async function loadNotifications(){
 
-        setInterval(loadNotifications, 5000);
-        loadNotifications();
-        window.logout = logout;
-    </script>
+  const userId = localStorage.getItem("userId");
+
+  if (!userId) return;
+
+  const res = await fetch(`${BASE_URL}/flights/unread/${userId}`);
+  const data = await res.json();
+
+  document.getElementById("notifCount").innerText = data.count || 0;
+}
+
+setInterval(loadNotifications, 5000);
+loadNotifications();
+
+window.logout = logout;
+</script>
+
 </body>
 </html>
