@@ -30,7 +30,8 @@ router.post("/register", async (req, res) => {
   });
 });
 
-// LOGIN
+
+// LOGIN (Modified to check profile status)
 router.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -54,12 +55,33 @@ router.post("/login", (req, res) => {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        profile_completed: user.profile_completed // This tells the frontend where to go
       },
       token
     });
   });
 });
+
+// NEW: SAVE PROFILE SETUP
+router.post("/setup-profile", authMiddleware, (req, res) => {
+  const { fullName, username, bio, interests } = req.body;
+  const userId = req.user.id;
+
+  // 1. Insert into profiles table (based on your DB image)
+  const profileSql = "INSERT INTO profiles (user_id, full_name, username, bio, interests) VALUES (?, ?, ?, ?, ?)";
+  
+  db.query(profileSql, [userId, fullName, username, bio, JSON.stringify(interests)], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    // 2. Mark setup as complete in users table
+    db.query("UPDATE users SET profile_completed = TRUE WHERE id = ?", [userId], (updateErr) => {
+      if (updateErr) return res.status(500).json({ error: updateErr.message });
+      res.json({ message: "Profile setup successful! ✈️" });
+    });
+  });
+});
+
 
 // PROTECTED
 router.get("/profile", authMiddleware, (req, res) => {

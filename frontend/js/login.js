@@ -57,6 +57,12 @@ form.addEventListener("submit", async (e) => {
                 localStorage.setItem("token", data.token);
             }
             setTimeout(() => {
+              // Inside the successful login response:
+if (data.isFirstTime) {
+    window.location.href = "setup-profile.html"; 
+} else {
+    window.location.href = "dashboard.html";
+}
                 window.location.href = name ? "login.html" : "dashboard.html";
             }, 1500);
         } else {

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Your Profile | VoyaMate</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .setup-card { background: white; padding: 2.5rem; border-radius: 24px; width: 100%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .progress-bar { height: 4px; background: #e2e8f0; border-radius: 10px; margin: 1.5rem 0; overflow: hidden; }
+        .progress-fill { height: 100%; background: #2563eb; width: 50%; transition: 0.3s; }
+        .profile-pic-upload { width: 100px; height: 100px; background: #f1f5f9; border-radius: 20px; margin: 0 auto 2rem; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; border: 2px dashed #cbd5e1; }
+        .interest-tag { padding: 8px 16px; border: 1px solid #e2e8f0; border-radius: 50px; font-size: 0.85rem; cursor: pointer; transition: 0.2s; background: white; color: #475569; }
+        .interest-tag.selected { background: #2563eb; color: white; border-color: #2563eb; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body style="background:#f8fafc; display:flex; justify-content:center; align-items:center; min-height:100vh; padding: 20px;">
+
+    <div class="setup-card">
+        <h2 id="stepTitle" style="color: #1e293b; font-weight: 700;">Setup Your Profile</h2>
+        <p id="stepSub" style="color: #64748b; font-size: 0.9rem;">Step 1 of 2 — Basic Info</p>
+        
+        <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+
+        <div id="step1">
+            <div class="profile-pic-upload" onclick="document.getElementById('fileInput').click()">
+                <span style="font-size: 2rem; opacity: 0.3;">👤</span>
+                <input type="file" id="fileInput" hidden accept="image/*">
+            </div>
+            <div class="input-group">
+                <label>Full Name *</label>
+                <input type="text" id="setupName" placeholder="Your name">
+            </div>
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" id="setupUser" placeholder="@username">
+            </div>
+            <div class="input-group">
+                <label>Bio</label>
+                <textarea id="setupBio" placeholder="Tell others about yourself..." style="width:100%; border-radius:12px; border:1px solid #e2e8f0; padding:10px; height:80px;"></textarea>
+            </div>
+            <button class="create-btn" onclick="goToStep(2)">Continue →</button>
+        </div>
+
+        <div id="step2" class="hidden">
+            <p style="font-weight: 600; margin-bottom: 1rem;">Pick your interests</p>
+            <div id="interestsGrid" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 2rem;">
+                </div>
+            <button class="create-btn" onclick="finishSetup()">Complete Setup</button>
+        </div>
+    </div>
+
+    <script type="module" src="js/setup-profile.js"></script>
+</body>
+</html>
