@@ -1,49 +1,150 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Dashboard</title>
-</head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoyaMate | Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body { background: #f8fafc; color: #1e293b; display: block; }
+        
+        .main-content {
+            padding: 2rem;
+            margin-bottom: 80px; /* Space for bottom nav */
+        }
 
+        @media (min-width: 1024px) {
+            .main-content { margin-left: 280px; margin-bottom: 0; }
+        }
+
+        .welcome-section { margin-bottom: 2rem; }
+        .welcome-section h1 { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; }
+        .welcome-section p { color: #64748b; margin-top: 4px; }
+
+        /* AI Assistant Widget */
+        .ai-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 24px;
+            padding: 1.5rem;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .ai-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px; }
+        .ai-card p { font-size: 0.9rem; opacity: 0.8; line-height: 1.5; margin-bottom: 1rem; }
+
+        /* Quick Action Grid */
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .action-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 20px;
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid #e2e8f0;
+            transition: 0.3s;
+        }
+
+        .action-item:hover { transform: translateY(-5px); border-color: #2563eb; }
+        .action-item .icon { font-size: 1.5rem; margin-bottom: 0.5rem; display: block; }
+        .action-item span { font-weight: 600; font-size: 0.9rem; }
+
+        /* Bottom Navigation (Mobile) */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 1rem;
+            border-top: 1px solid #e2e8f0;
+            z-index: 1000;
+        }
+
+        @media (min-width: 1024px) { .bottom-nav { display: none; } }
+
+        .nav-item { text-decoration: none; color: #94a3b8; font-size: 1.2rem; position: relative; }
+        .nav-item.active { color: #2563eb; }
+        .badge {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            background: #ef4444;
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 800;
+        }
+    </style>
+</head>
 <body>
 
-<h2>Dashboard</h2>
+    <div class="voyamate-sidebar" id="sidebar">
+        <div class="brand-v">VOYAMATE</div>
+        <a href="dashboard.html" class="nav-link active">🏠 Home</a>
+        <a href="find-travelers.html" class="nav-link">🔍 Find Buddies</a>
+        <a href="connections.html" class="nav-link">🤝 Connections</a>
+        <a href="add-flight.html" class="nav-link">✈️ My Flights</a>
+        <a href="profile.html" class="nav-link">👤 Profile</a>
+        <div style="margin-top: auto;">
+            <button onclick="logout()" style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:600;">🚪 Logout</button>
+        </div>
+    </div>
 
-<p>Welcome to Travel Companion</p>
+    <div class="main-content">
+        <div class="welcome-section">
+            <h1>Hi, Traveller! ☁️</h1>
+            <p>Ready for your next adventure?</p>
+        </div>
 
-<a href="find-travelers.html">Find Travelers</a><br><br>
-<a href="connections.html">My Connections</a><br><br>
-<a href="add-flight.html">Add Flight</a><br><br>
-<a href="profile.html">Create Profile</a><br><br>
+        <div class="ai-card">
+            <h3><span>✨</span> Voya AI Assistant</h3>
+            <p>I can help you find flights, suggest buddies, or plan your itinerary. Just ask!</p>
+            <button style="background:white; color:#1e293b; border:none; padding:8px 16px; border-radius:10px; font-weight:700; cursor:pointer;">Ask AI</button>
+        </div>
 
-<h3>🔔 Notifications: <span id="notifCount">0</span></h3>
+        <div class="action-grid">
+            <a href="add-flight.html" class="action-item">
+                <span class="icon">➕</span>
+                <span>Add Flight</span>
+            </a>
+            <a href="find-travelers.html" class="action-item">
+                <span class="icon">🌍</span>
+                <span>Discover</span>
+            </a>
+            <a href="connections.html" class="action-item">
+                <span class="icon">💬</span>
+                <span>Messages</span>
+            </a>
+            <a href="profile.html" class="action-item">
+                <span class="icon">⚙️</span>
+                <span>Settings</span>
+            </a>
+        </div>
+    </div>
 
-<button onclick="logout()">Logout</button>
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item active">🏠</a>
+        <a href="find-travelers.html" class="nav-item">🔍</a>
+        <a href="add-flight.html" class="nav-item">➕</a>
+        <a href="connections.html" class="nav-item">
+            🔔 <span class="badge" id="notifCount">0</span>
+        </a>
+        <a href="profile.html" class="nav-item">👤</a>
+    </nav>
 
-<script type="module">
-import BASE_URL from "./js/config.js";
-
-function logout(){
-  localStorage.clear();
-  window.location.href = "login.html";
-}
-
-async function loadNotifications(){
-
-  const userId = localStorage.getItem("userId");
-
-  if (!userId) return;
-
-  const res = await fetch(`${BASE_URL}/flights/unread/${userId}`);
-  const data = await res.json();
-
-  document.getElementById("notifCount").innerText = data.count || 0;
-}
-
-setInterval(loadNotifications, 5000);
-loadNotifications();
-
-window.logout = logout;
-</script>
-
+    <script type="module" src="js/dashboard.js"></script>
 </body>
 </html>
