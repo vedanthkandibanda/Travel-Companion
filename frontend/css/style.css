@@ -53,18 +53,46 @@
     box-shadow: -5px 0 15px var(--accent-glow);
 }
 
-/* Notification Glow */
-.pulse-container {
-    background: rgba(0, 242, 255, 0.05);
-    border: 1px solid var(--accent-glow);
-    padding: 15px;
-    border-radius: 20px;
-    margin-top: 2rem;
-    text-align: center;
+/* Custom VoyaMate Notification Toast */
+.v-toast {
+    position: fixed;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: white;
+    padding: 14px 28px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+    z-index: 10000;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+}
+.v-toast.show { top: 30px; }
+.v-toast.error { border-bottom: 4px solid #ef4444; }
+.v-toast.success { border-bottom: 4px solid #10b981; }
+
+/* Custom Validation Style */
+input.invalid {
+    border-color: #ef4444 !important;
+    background-color: #fff1f2 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
 }
 
-#notifCount {
-    font-weight: 800;
-    color: var(--accent);
-    text-shadow: 0 0 10px var(--accent);
+/* Modal for Forgot Password */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px);
+    z-index: 11000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
 }

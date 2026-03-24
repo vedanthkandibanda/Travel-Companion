@@ -3,121 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoyaLink | Sign In</title>
+    <title>VoyaMate | Sign In</title>
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        /* Exact color overrides from your VoyaLink image */
-        body {
-            background-color: #f8fafc; /* Exact light slate bg */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            color: #1e293b;
-        }
-
-        .login-card {
-            background: #ffffff;
-            padding: 40px;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0; /* Exact border color */
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-
-        .icon-circle {
-            width: 64px;
-            height: 64px;
-            background: #334155; /* Exact icon circle color */
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            color: white;
-            font-size: 1.4rem;
-        }
-
-        h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; color: #0f172a; }
-        .subtitle { color: #64748b; font-size: 0.875rem; margin-bottom: 24px; }
-
-
-        .divider {
-            display: flex;
-            align-items: center;
-            margin: 20px 0;
-            color: #94a3b8;
-            font-size: 0.7rem;
-            font-weight: 700;
-        }
-        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #f1f5f9; }
-        .divider span { padding: 0 10px; }
-
-        .input-group { text-align: left; margin-bottom: 16px; }
-        .input-group label { display: block; font-size: 0.75rem; font-weight: 600; margin-bottom: 6px; color: #475569; text-align: center; }
-        
-        .input-wrapper { position: relative; }
-        .input-wrapper span { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.9rem; }
-
-        input {
-            width: 100%;
-            padding: 10px 12px 10px 36px;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
-            background: #fcfdfe;
-            font-size: 0.9rem;
-            color: #1e293b;
-        }
-        input::placeholder { color: #cbd5e1; }
-
-        .signin-btn {
-            width: 100%;
-            padding: 12px;
-            background: #1e293b; /* Exact Primary Color */
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            cursor: pointer;
-            margin-top: 8px;
-            transition: background 0.2s;
-        }
-        .signin-btn:hover { background: #0f172a; }
-
-        .footer-links { margin-top: 20px; font-size: 0.8rem; color: #64748b; }
-        .footer-links a { color: #475569; text-decoration: none; font-weight: 700; }
-    </style>
 </head>
-<body>
+<body style="background:#f3f4f6; display:flex; justify-content:center; align-items:center; min-height:100vh;">
 
-    <div class="login-card">
-        <div class="icon-circle">✈️</div>
-        <h2>Welcome to VoyaLink</h2>
-        <p class="subtitle">Sign in to continue</p>
+    <div class="login-card" style="background:white; padding:2.5rem; border-radius:16px; box-shadow:0 10px 25px rgba(0,0,0,0.05); width:100%; max-width:420px; text-align:center;">
+        <div style="width:70px; height:70px; background:#1a202c; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; color:white; font-size:1.5rem;">✈️</div>
+        <h2 style="font-weight:700; margin-bottom:0.5rem;">Welcome to VoyaMate</h2>
+        <p style="color:#718096; font-size:0.9rem; margin-bottom:2rem;">Sign in to continue</p>
 
-        <form id="loginForm">
-            <div class="input-group">
-                <label>Email</label>
-                <div class="input-wrapper">
-                    <span>✉️</span>
-                    <input type="email" id="email" placeholder="you@example.com" required>
-                </div>
+        <form id="loginForm" novalidate>
+            <div style="text-align:left; margin-bottom:1.2rem;">
+                <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:0.5rem;">Email</label>
+                <input type="email" id="email" placeholder="you@example.com" required style="width:100%; padding:0.8rem; border-radius:8px; border:1px solid #e2e8f0; background:#f8fafc;">
             </div>
-            <div class="input-group">
-                <label>Password</label>
-                <div class="input-wrapper">
-                    <span>🔒</span>
-                    <input type="password" id="password" placeholder="••••••••" required>
-                </div>
+            <div style="text-align:left; margin-bottom:1.2rem;">
+                <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:0.5rem;">Password</label>
+                <input type="password" id="password" placeholder="••••••••" required style="width:100%; padding:0.8rem; border-radius:8px; border:1px solid #e2e8f0; background:#f8fafc;">
             </div>
-            <button type="submit" class="signin-btn">Sign in</button>
+            <button type="submit" style="width:100%; padding:0.8rem; background:#1a202c; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Sign in</button>
         </form>
 
-        <div class="footer-links">
-            <p><a href="#">Forgot password?</a></p>
-            <p style="margin-top: 12px;">Need an account? <a href="register.html">Sign up</a></p>
+        <div style="margin-top:1.5rem; font-size:0.85rem;">
+            <p><a href="javascript:void(0)" onclick="document.getElementById('forgotModal').style.display='flex'" style="color:#4a5568; text-decoration:none;">Forgot password?</a></p>
+            <p style="margin-top:10px;">Need an account? <a href="register.html" style="color:#2563eb; font-weight:700; text-decoration:none;">Sign up</a></p>
+        </div>
+    </div>
+
+    <div id="forgotModal" class="modal-overlay">
+        <div style="background:white; padding:2rem; border-radius:16px; width:100%; max-width:380px; position:relative;">
+            <span onclick="document.getElementById('forgotModal').style.display='none'" style="position:absolute; top:15px; right:15px; cursor:pointer;">✕</span>
+            <h3 style="margin-bottom:10px;">Reset Password</h3>
+            <p style="font-size:0.85rem; color:#64748b; margin-bottom:1.5rem;">Enter your email to receive a reset link.</p>
+            <input type="email" id="resetEmail" placeholder="you@example.com" style="width:100%; padding:0.8rem; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:1rem;">
+            <button onclick="handleReset()" style="width:100%; padding:0.8rem; background:#2563eb; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Send Link</button>
         </div>
     </div>
 
