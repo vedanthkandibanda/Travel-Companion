@@ -23,3 +23,13 @@ const login = async (req, res) => {
         res.status(500).json({ message: "Server error" });
     }
 };
+
+const completeSetup = async (req, res) => {
+    const { userId } = req.body;
+    try {
+        await db.execute('UPDATE users SET has_completed_setup = 1 WHERE id = ?', [userId]);
+        res.json({ success: true, message: "Profile setup completed" });
+    } catch (err) {
+        res.status(500).json({ message: "Database error" });
+    }
+};
