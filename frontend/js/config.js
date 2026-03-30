@@ -1,6 +1,15 @@
-// config.js
-const BASE_URL = "https://travel-companion-y8fn.onrender.com/api";
-// Ensure this only runs if io is defined
-const socket = typeof io !== 'undefined' ? io("https://travel-companion-y8fn.onrender.com") : null;
+import axios from 'axios';
 
-export default BASE_URL;
+const api = axios.create({
+  baseURL: "https://travel-companion-y8fn.onrender.com/api", 
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export default api;
